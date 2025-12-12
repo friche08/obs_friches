@@ -14,3 +14,11 @@ body {
 h1 {
   padding: 10px;
 }
+
+/* ------------------------------------------------------------------------- */
+/*  Animation SVG dans les icônes Leaflet : nécessaire pour capter mouseover */
+/* ------------------------------------------------------------------------- */
+
+.picto svg rect {
+  pointer-events: visiblePainted; /* permet au SVG de détecter le survol */
+}
