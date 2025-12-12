@@ -1,7 +1,6 @@
-// -----------
+
 // 1) Création de la carte Leaflet
-// -----------
-const map = L.map('map').setView([46.8, 2.5], 6); // centre France
+const map = L.map('map').setView([49.7, 4.7], 9); // centre Ardennes
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
@@ -9,18 +8,14 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 
-// -----------
 // 2) Chemin vers le CSV
-// -----------
-const CSV_PATH = "data.csv";  // à adapter si tu le mets ailleurs
+const CSV_PATH = "data.csv";
 
 
-// -----------
 // 3) Lecture du CSV avec PapaParse
-// -----------
 Papa.parse(CSV_PATH, {
-  download: true,       // charge le fichier sur le serveur local
-  header: true,         // lit la 1ère ligne comme en-têtes de colonnes
+  download: true,       // charge le fichier
+  header: true,         // lit la 1ère ligne comme en-tête
   skipEmptyLines: true, // ignore les lignes vides
   complete: function(results) {
     console.log("CSV chargé :", results.data.length, "lignes");
@@ -29,14 +24,12 @@ Papa.parse(CSV_PATH, {
 });
 
 
-// -----------
 // 4) Conversion des lignes CSV en marqueurs sur la carte
-// -----------
 function addMarkers(rows) {
 
   rows.forEach(row => {
 
-    // selon ton fichier : les colonnes sont "latitude" et "longitude"
+    // colonnes "latitude" et "longitude"
     const lat = parseFloat(row.latitude);
     const lon = parseFloat(row.longitude);
 
@@ -46,7 +39,7 @@ function addMarkers(rows) {
     // création du marker
     const marker = L.marker([lat, lon]).addTo(map);
 
-    // popup ultra-simple avec quelques infos (ex : nom du site + commune)
+    // création du popup
     const popupHtml = `
       <strong>${row.site_nom || "Nom inconnu"}</strong><br>
       Commune : ${row.comm_nom || "n.d."}<br>
