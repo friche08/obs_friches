@@ -4,35 +4,25 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Observatoire friches Ardennes</title>
-
-  <!-- Leaflet -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-
-  <!-- CSS du projet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
 
-  <h1>Observatoire des friches des Ardennes</h1>
+  <div class="header-container">
+    <h1>Observatoire des friches des Ardennes</h1>
+    <button id="toggle-filters" type="button">☰ Filtres</button>
+  </div>
 
-  <!-- Bouton filtres -->
-  <button id="toggle-filters" type="button">
-    ☰ Filtres
-  </button>
-
-  <!-- Carte -->
   <div id="map"></div>
 
-  <!-- Panneau filtres (off-canvas) -->
   <aside id="filters-panel">
+    <div class="panel-header">
+      <h2>Filtres</h2>
+      <button id="close-filters">✕</button>
+    </div>
 
-    <h2>Filtres</h2>
-
-    <!-- Filtres hiérarchiques -->
     <div class="filter-group">
       <label for="filter-epci">EPCI</label>
       <select id="filter-epci">
@@ -54,9 +44,13 @@
       </select>
     </div>
 
-    <!-- Statuts -->
     <fieldset class="filter-group">
       <legend>Statut de la friche</legend>
+
+      <label>
+        <input type="checkbox" value="friche potentielle">
+        Friche potentielle
+      </label>
 
       <label>
         <input type="checkbox" value="friche sans projet" checked>
@@ -69,17 +63,11 @@
       </label>
 
       <label>
-        <input type="checkbox" value="friche potentielle">
-        Friche potentielle
-      </label>
-
-      <label>
         <input type="checkbox" value="friche reconvertie">
         Friche reconvertie
       </label>
     </fieldset>
 
-    <!-- Surface -->
     <div class="filter-group">
       <label>Surface (m²)</label>
       <div class="surface-inputs">
@@ -90,11 +78,8 @@
 
   </aside>
 
-  <!-- Librairies -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
-  <!-- Script principal -->
   <script src="script.js"></script>
 
 </body>
