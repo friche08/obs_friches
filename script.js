@@ -252,11 +252,11 @@ function populateSelect(selectElement, dataList, key) {
     // Définition des textes personnalisés pour l'option par défaut
     let defaultText = ''; 
     if (key === 'epci_nom') {
-        defaultText = '--- Tous les EPCI ---';
+        defaultText = '- Tous les EPCI -';
     } else if (key === 'comm_nom') {
-        defaultText = '--- Toutes les communes ---';
+        defaultText = '- Toutes les communes -';
     } else if (key === 'site_nom') {
-        defaultText = '--- Toutes les friches ---';
+        defaultText = '- Toutes les friches -';
     } else {
         // Fallback si la clé n'est pas reconnue
         defaultText = `Toutes les ${key.split('_')[0]}s`; 
@@ -362,4 +362,5 @@ if (btnClose && panel) {
 map.on('click', () => {
     panel.classList.remove('open');
 });
+
 
