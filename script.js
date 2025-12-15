@@ -37,10 +37,10 @@ Papa.parse('data.csv', {
     // 3. Charger le GeoJSON des contours
     loadGeoJsonData();
     
-    // 🚩 CORRECTION : ACTIVER LES ÉCOUTEURS DES CHECKBOXES ET SURFACE
+    // 4. Activer les écouteurs checkboxes et surface
     initFilterListeners(); 
 
-    // 4. Premier rendu (pour gérer les checkbox par défaut)
+    // 5. Premier rendu (pour gérer les checkbox par défaut)
     updateMap(); 
   }
 });
@@ -300,3 +300,4 @@ if (btnClose && panel) {
 map.on('click', () => {
     panel.classList.remove('open');
 });
+
