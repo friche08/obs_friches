@@ -13,8 +13,83 @@
 </head>
 <body>
 
-  <h1>Observatoire des friches des Ardennes</h1>
+<h1>Observatoire des friches des Ardennes</h1>
+
+<!-- Bouton filtres (surtout utile sur mobile) -->
+<button id="toggle-filters" aria-label="Afficher les filtres">
+  ☰ Filtres
+</button>
+
+<div id="app-container">
+
+  <!-- Panneau de filtres -->
+  <aside id="filters-panel">
+
+    <h2>Filtres</h2>
+
+    <!-- Filtres hiérarchiques -->
+    <div class="filter-group">
+      <label for="filter-epci">EPCI</label>
+      <select id="filter-epci">
+        <option value="">Tous les EPCI</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="filter-commune">Commune</label>
+      <select id="filter-commune">
+        <option value="">Toutes les communes</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="filter-friche">Friche</label>
+      <select id="filter-friche">
+        <option value="">Toutes les friches</option>
+      </select>
+    </div>
+
+    <!-- Statuts -->
+    <fieldset class="filter-group">
+      <legend>Statut de la friche</legend>
+
+      <label>
+        <input type="checkbox" value="friche sans projet" checked>
+        Friche sans projet
+      </label>
+
+      <label>
+        <input type="checkbox" value="friche avec projet" checked>
+        Friche avec projet
+      </label>
+
+      <label>
+        <input type="checkbox" value="friche potentielle">
+        Friche potentielle
+      </label>
+
+      <label>
+        <input type="checkbox" value="friche reconvertie">
+        Friche reconvertie
+      </label>
+    </fieldset>
+
+    <!-- Surface -->
+    <div class="filter-group">
+      <label>Surface (m²)</label>
+
+      <div class="surface-inputs">
+        <input type="number" id="surface-min" placeholder="Min">
+        <input type="number" id="surface-max" placeholder="Max">
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Carte -->
   <div id="map"></div>
+
+</div>
 
   <!-- Librairies -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -24,4 +99,5 @@
   <script src="script.js"></script>
 </body>
 </html>
+
 
