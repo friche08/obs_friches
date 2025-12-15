@@ -11,10 +11,11 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 /* 2. Variables Globales                                                    */
 /* ------------------------------------------------------------------------- */
 let allData = [];
-let markers = [];
+let markers = [];          // Objets { marker, data }
+let markersDict = {};      // Nouveau : { site_id : markerLeaflet } pour lier polygone/popup
 let polygonsDict = {};
 let polygonsLayerGroup = L.layerGroup().addTo(map);
-const ZOOM_THRESHOLD = 13; // Niveau de zoom min pour voir les contours
+const ZOOM_THRESHOLD = 13;
 
 /* ------------------------------------------------------------------------- */
 /* 3. Chargement des données (CSV puis GeoJSON)                             */
@@ -37,10 +38,10 @@ Papa.parse('data.csv', {
     // 3. Charger le GeoJSON des contours
     loadGeoJsonData();
     
-    // 4. Activer les écouteurs checkboxes et surface
+    // 4. Activer les écouteurs de statut et surface
     initFilterListeners(); 
 
-    // 5. Premier rendu (pour gérer les checkbox par défaut)
+    // 5. Premier rendu
     updateMap(); 
   }
 });
@@ -66,9 +67,17 @@ function loadGeoJsonData() {
           const id = feature.properties.site_id;
           if (id) {
             polygonsDict[id] = layer;
-            if (feature.properties.nom || feature.properties.site_nom) {
-               layer.bindPopup(feature.properties.nom || feature.properties.site_nom);
-            }
+            
+            // 🚩 NOUVEAUTÉ 1 : Lier le clic du polygone au popup du marqueur
+            layer.on('click', function(e) {
+                // S'assurer que le marqueur existe et est visible
+                if(markersDict[id]) {
+                    markersDict[id].openPopup();
+                }
+            });
+            
+            // Pas besoin de popup ici, on utilise celui du marqueur
+            // layer.bindPopup(feature.properties.nom || feature.properties.site_nom);
           }
         }
       });
@@ -123,6 +132,7 @@ function createPictoIcon(svg) {
 function addMarkers(rows) {
   markers.forEach(m => map.removeLayer(m.marker));
   markers = [];
+  markersDict = {}; // Réinitialisation
 
   rows.forEach(row => {
     const lat = parseFloat(row.latitude);
@@ -154,39 +164,91 @@ function addMarkers(rows) {
       marker: marker,
       data: row
     });
+    // Stockage du marqueur pour le lien avec le polygone (si site_id existe)
+    if (row.site_id) {
+        markersDict[row.site_id] = marker;
+    }
   });
 }
 
 /* ------------------------------------------------------------------------- */
-/* 5. Filtres Hiérarchiques (Cascade - pas de changement)                   */
+/* 5. Filtres Hiérarchiques (Cascade Intelligente)                          */
 /* ------------------------------------------------------------------------- */
 const selEpci = document.getElementById('filter-epci');
 const selCommune = document.getElementById('filter-commune');
 const selFriche = document.getElementById('filter-friche');
 
+// 🚩 NOUVEAUTÉ 2 : Fonction utilitaire pour récupérer les données après filtre statut/surface
+function getFilteredData() {
+    const surfMin = parseFloat(document.getElementById('surface-min').value) || 0;
+    const surfMax = parseFloat(document.getElementById('surface-max').value) || Infinity;
+    const checkedBoxes = document.querySelectorAll('fieldset input:checked');
+    const allowedStatuses = Array.from(checkedBoxes).map(cb => cb.value);
+
+    return allData.filter(d => {
+        // Filtre Statut
+        if (!allowedStatuses.includes(d.site_statut)) return false;
+        
+        // Filtre Surface
+        const s = d.unite_fonciere_surface || 0;
+        if (s < surfMin || s > surfMax) return false;
+
+        return true;
+    });
+}
+
+
 function initCascadingFilters() {
-    populateSelect(selEpci, allData, 'epci_nom');
-    // Ces deux appels corrigent le bug du démarrage (point 1 de ta demande précédente)
-    updateCommuneOptions();
-    updateFricheOptions();
+    // Les listes doivent se mettre à jour à chaque changement de statut/surface
+    
+    // On appelle la mise à jour pour le remplissage initial
+    updateFilterOptions();
 
-    selEpci.addEventListener('change', () => {
-        updateCommuneOptions();
-        updateFricheOptions();
-        updateMap();
-    });
-
-    selCommune.addEventListener('change', () => {
-        updateFricheOptions();
-        updateMap();
-    });
-
+    // Écouteurs pour les changements
+    selEpci.addEventListener('change', updateFilterOptions);
+    selCommune.addEventListener('change', updateFilterOptions);
     selFriche.addEventListener('change', updateMap);
 }
 
+
+function updateFilterOptions() {
+    // 1. On récupère le sous-ensemble de données après filtrage (Statut/Surface)
+    const baseData = getFilteredData();
+    
+    // 2. Mise à jour des EPCI (parmi les données restantes)
+    populateSelect(selEpci, baseData, 'epci_nom');
+
+    // 3. Mise à jour des Communes (basée sur EPCI sélectionné + baseData)
+    const selectedEpci = selEpci.value;
+    let filteredCommunes = baseData;
+    if (selectedEpci) {
+        filteredCommunes = filteredCommunes.filter(d => d.epci_nom === selectedEpci);
+    }
+    populateSelect(selCommune, filteredCommunes, 'comm_nom');
+    
+    // 4. Mise à jour des Friches (basée sur EPCI/Commune sélectionnés + baseData)
+    const selectedCommune = selCommune.value;
+    let filteredFriches = filteredCommunes; // On part de la liste des communes déjà filtrées
+    if (selectedCommune) {
+        filteredFriches = filteredFriches.filter(d => d.comm_nom === selectedCommune);
+    }
+    populateSelect(selFriche, filteredFriches, 'site_nom');
+    
+    // Une fois les listes mises à jour, on filtre la carte
+    updateMap();
+}
+
+
 function populateSelect(selectElement, dataList, key) {
-    const defaultOption = selectElement.options[0];
+    // On garde l'option "Tous..."
+    const defaultOptionValue = selectElement.options[0].value;
+    const currentSelectedValue = selectElement.value; // On garde la valeur choisie si elle existe
+    
     selectElement.innerHTML = '';
+    
+    const defaultOption = document.createElement('option');
+    defaultOption.value = defaultOptionValue;
+    defaultOption.textContent = `Toutes les ${key.split('_')[0]}s`; // Texte générique
     selectElement.appendChild(defaultOption);
 
     const values = [...new Set(dataList.map(d => d[key]))].filter(Boolean).sort();
@@ -197,42 +259,29 @@ function populateSelect(selectElement, dataList, key) {
         opt.textContent = val;
         selectElement.appendChild(opt);
     });
+
+    // Réappliquer la valeur sélectionnée si elle est encore dans la liste
+    if (currentSelectedValue && selectElement.querySelector(`option[value="${currentSelectedValue}"]`)) {
+        selectElement.value = currentSelectedValue;
+    } else {
+        // Sinon, on sélectionne l'option "Tous..." (la première)
+        selectElement.value = defaultOptionValue;
+    }
 }
 
-function updateCommuneOptions() {
-    const selectedEpci = selEpci.value;
-    const filteredData = selectedEpci 
-        ? allData.filter(d => d.epci_nom === selectedEpci)
-        : allData;
-
-    populateSelect(selCommune, filteredData, 'comm_nom');
-}
-
-function updateFricheOptions() {
-    const selectedEpci = selEpci.value;
-    const selectedCommune = selCommune.value;
-
-    let filteredData = allData;
-
-    if (selectedEpci) filteredData = filteredData.filter(d => d.epci_nom === selectedEpci);
-    if (selectedCommune) filteredData = filteredData.filter(d => d.comm_nom === selectedCommune);
-
-    populateSelect(selFriche, filteredData, 'site_nom');
-}
 
 /* ------------------------------------------------------------------------- */
 /* 6. Moteur de Filtrage (Markers + Polygones)                              */
 /* ------------------------------------------------------------------------- */
 
 function initFilterListeners() {
-    // 🚩 CORRECTION : Ces écouteurs sont bien définis, mais l'appel à cette fonction manquait
-    // Écouteurs pour les Checkboxes statuts
-    document.querySelectorAll('fieldset input').forEach(input => {
-        input.addEventListener('change', updateMap);
+    // Les changements de Statut ou Surface mettent à jour les listes ET la carte
+    document.querySelectorAll('fieldset input, #surface-min, #surface-max').forEach(input => {
+        input.addEventListener('change', updateFilterOptions);
+        if(input.type === 'number') {
+            input.addEventListener('input', updateFilterOptions);
+        }
     });
-    // Écouteurs pour les Inputs surface
-    document.getElementById('surface-min').addEventListener('input', updateMap);
-    document.getElementById('surface-max').addEventListener('input', updateMap);
 }
 
 map.on('zoomend', updateMap);
@@ -241,11 +290,10 @@ function updateMap() {
     const valEpci = selEpci.value;
     const valCommune = selCommune.value;
     const valFriche = selFriche.value;
-    const surfMin = parseFloat(document.getElementById('surface-min').value) || 0;
-    const surfMax = parseFloat(document.getElementById('surface-max').value) || Infinity;
-    const checkedBoxes = document.querySelectorAll('fieldset input:checked');
-    const allowedStatuses = Array.from(checkedBoxes).map(cb => cb.value);
-
+    
+    // On utilise la fonction getFilteredData pour la base du tri
+    const baseFilteredData = getFilteredData(); 
+    
     const currentZoom = map.getZoom();
     const showPolygons = currentZoom >= ZOOM_THRESHOLD;
 
@@ -253,26 +301,26 @@ function updateMap() {
 
     markers.forEach(item => {
         const d = item.data;
-        let visible = true;
+        let visible = false;
 
-        // --- Filtres Données ---
-        if (valEpci && d.epci_nom !== valEpci) visible = false;
-        if (visible && valCommune && d.comm_nom !== valCommune) visible = false;
-        if (visible && valFriche && d.site_nom !== valFriche) visible = false;
-        if (visible && !allowedStatuses.includes(d.site_statut)) visible = false;
-        
-        const s = d.unite_fonciere_surface || 0;
-        if (visible && (s < surfMin || s > surfMax)) visible = false;
+        // On vérifie d'abord si la donnée passe les filtres Statut et Surface
+        const isBaseVisible = baseFilteredData.some(b => b === d);
 
-        // --- Gestion Affichage Marker ---
+        // Si elle passe la base du filtre, on applique la cascade (EPCI, Commune, Friche)
+        if (isBaseVisible) {
+            visible = true;
+            if (valEpci && d.epci_nom !== valEpci) visible = false;
+            if (visible && valCommune && d.comm_nom !== valCommune) visible = false;
+            if (visible && valFriche && d.site_nom !== valFriche) visible = false;
+        }
+
+        // --- Gestion Affichage Marker et Polygone ---
         if (visible) {
             if (!map.hasLayer(item.marker)) item.marker.addTo(map);
             
-            // --- Gestion Affichage Polygone ---
             if (showPolygons && d.site_id && polygonsDict[d.site_id]) {
                 polygonsLayerGroup.addLayer(polygonsDict[d.site_id]);
             }
-
         } else {
             if (map.hasLayer(item.marker)) map.removeLayer(item.marker);
         }
@@ -300,4 +348,3 @@ if (btnClose && panel) {
 map.on('click', () => {
     panel.classList.remove('open');
 });
-
