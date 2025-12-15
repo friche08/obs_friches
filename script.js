@@ -7,11 +7,19 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-let allData = [];     // Données brutes
-let markers = [];     // Stockage pour gestion affichage/filtrage
+/* ------------------------------------------------------------------------- */
+/* 2. Variables Globales                                                    */
+/* ------------------------------------------------------------------------- */
+let allData = [];          // Données CSV
+let markers = [];          // Objets { marker, data }
+let polygonsDict = {};     // Dictionnaire { site_id : layerLeaflet } pour les contours
+let polygonsLayerGroup = L.layerGroup().addTo(map); // Groupe pour afficher les polygones visibles
+
+// Configuration du Zoom pour les polygones
+const ZOOM_THRESHOLD = 13; // Niveau de zoom min pour voir les contours
 
 /* ------------------------------------------------------------------------- */
-/* 2. Chargement des données                                                */
+/* 3. Chargement des données (CSV puis GeoJSON)                             */
 /* ------------------------------------------------------------------------- */
 Papa.parse('data.csv', {
   download: true,
@@ -21,22 +29,63 @@ Papa.parse('data.csv', {
   complete: function (results) {
     allData = results.data;
     
-    // Initialisation des marqueurs (avec ton style SVG)
+    // 1. Créer les marqueurs
     addMarkers(allData);
     
-    // Initialisation des listes déroulantes (Hiérarchie)
+    // 2. Initialiser les filtres (Listes déroulantes)
     initCascadingFilters();
     
-    // Écouteurs pour le filtrage temps réel
-    initFilterListeners();
+    // 3. Charger le GeoJSON des contours
+    loadGeoJsonData();
     
-    // Premier filtrage pour respecter les checkbox par défaut
+    // 4. Premier rendu (pour gérer les checkbox par défaut)
     updateMap(); 
   }
 });
 
+function loadGeoJsonData() {
+  fetch('friches.geojson')
+    .then(response => response.json())
+    .then(geojson => {
+      // Pour chaque entité du GeoJSON, on prépare le layer sans l'afficher tout de suite
+      L.geoJSON(geojson, {
+        style: function (feature) {
+          // On cherche la ligne CSV correspondante pour avoir la couleur du statut
+          // On suppose que le CSV a une colonne site_id et le GeoJSON une prop site_id
+          const siteId = feature.properties.site_id; // ou feature.properties.id selon ton fichier
+          const row = allData.find(d => d.site_id === siteId);
+          const color = row ? getColorForStatus(row.site_statut) : '#3388ff';
+          
+          return {
+            color: color,
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.2 // Légèrement transparent
+          };
+        },
+        onEachFeature: function (feature, layer) {
+          const id = feature.properties.site_id;
+          if (id) {
+            // On stocke le layer dans le dictionnaire avec l'ID comme clé
+            polygonsDict[id] = layer;
+            
+            // Petit popup optionnel sur le polygone aussi
+            if (feature.properties.nom || feature.properties.site_nom) {
+               layer.bindPopup(feature.properties.nom || feature.properties.site_nom);
+            }
+          }
+        }
+      });
+      
+      console.log("GeoJSON chargé et indexé.");
+      // Une fois chargé, on relance updateMap pour afficher ceux qui doivent l'être
+      updateMap();
+    })
+    .catch(err => console.error("Erreur chargement GeoJSON :", err));
+}
+
 /* ------------------------------------------------------------------------- */
-/* 3. Fonctions SVG et Marqueurs (TON CODE INTÉGRÉ)                        */
+/* 4. Fonctions SVG et Marqueurs                                            */
 /* ------------------------------------------------------------------------- */
 
 function getColorForStatus(status) {
@@ -79,7 +128,6 @@ function createPictoIcon(svg) {
 }
 
 function addMarkers(rows) {
-  // Nettoyage préalable si rappel de fonction
   markers.forEach(m => map.removeLayer(m.marker));
   markers = [];
 
@@ -99,7 +147,6 @@ function addMarkers(rows) {
       riseOnHover: true
     });
 
-    // Ajout Popup
     const surf = row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue';
     marker.bindPopup(`
         <strong>${row.site_nom || 'Friche'}</strong><br>
@@ -108,9 +155,6 @@ function addMarkers(rows) {
         Surface: ${surf}
     `);
 
-    // AJOUT IMPORTANT : On ne l'ajoute pas direct à la carte (addTo(map)),
-    // on le stocke dans le tableau 'markers' pour que le filtrage gère l'affichage.
-    // (Mais on peut l'ajouter initialement et laisser le filtre faire le tri juste après).
     marker.addTo(map); 
     
     markers.push({
@@ -121,39 +165,37 @@ function addMarkers(rows) {
 }
 
 /* ------------------------------------------------------------------------- */
-/* 4. Logique de Filtres Hiérarchiques (Cascade)                            */
+/* 5. Filtres Hiérarchiques (Cascade)                                       */
 /* ------------------------------------------------------------------------- */
-
 const selEpci = document.getElementById('filter-epci');
 const selCommune = document.getElementById('filter-commune');
 const selFriche = document.getElementById('filter-friche');
 
 function initCascadingFilters() {
-    // 1. Remplir EPCI (niveau le plus haut)
+    // 1. Remplir EPCI
     populateSelect(selEpci, allData, 'epci_nom');
 
-    // 2. Écouteurs pour la cascade
-    
-    // Quand EPCI change -> Mettre à jour Communes
+    // CORRECTION 1 : On appelle tout de suite les mises à jour 
+    // pour peupler communes et friches avec "Tout" par défaut
+    updateCommuneOptions();
+    updateFricheOptions();
+
+    // 2. Écouteurs
     selEpci.addEventListener('change', () => {
         updateCommuneOptions();
-        updateFricheOptions(); // Reset friches aussi
-        updateMap(); // Filtrage carte
+        updateFricheOptions();
+        updateMap();
     });
 
-    // Quand Commune change -> Mettre à jour Friches
     selCommune.addEventListener('change', () => {
         updateFricheOptions();
-        updateMap(); // Filtrage carte
+        updateMap();
     });
 
-    // Quand Friche change -> Juste la carte
     selFriche.addEventListener('change', updateMap);
 }
 
-// Fonction utilitaire pour remplir un select
 function populateSelect(selectElement, dataList, key) {
-    // Garder l'option "Tous..."
     const defaultOption = selectElement.options[0];
     selectElement.innerHTML = '';
     selectElement.appendChild(defaultOption);
@@ -170,9 +212,7 @@ function populateSelect(selectElement, dataList, key) {
 
 function updateCommuneOptions() {
     const selectedEpci = selEpci.value;
-    
-    // Si un EPCI est choisi, on ne garde que les communes de cet EPCI
-    // Sinon (vide), on prend toutes les données
+    // Si EPCI vide, on prend tout, sinon on filtre
     const filteredData = selectedEpci 
         ? allData.filter(d => d.epci_nom === selectedEpci)
         : allData;
@@ -186,75 +226,75 @@ function updateFricheOptions() {
 
     let filteredData = allData;
 
-    if (selectedEpci) {
-        filteredData = filteredData.filter(d => d.epci_nom === selectedEpci);
-    }
-    if (selectedCommune) {
-        filteredData = filteredData.filter(d => d.comm_nom === selectedCommune);
-    }
+    if (selectedEpci) filteredData = filteredData.filter(d => d.epci_nom === selectedEpci);
+    if (selectedCommune) filteredData = filteredData.filter(d => d.comm_nom === selectedCommune);
 
     populateSelect(selFriche, filteredData, 'site_nom');
 }
 
 /* ------------------------------------------------------------------------- */
-/* 5. Logique de Filtrage (Moteur)                                          */
+/* 6. Moteur de Filtrage (Markers + Polygones)                              */
 /* ------------------------------------------------------------------------- */
 
 function initFilterListeners() {
-    // Checkboxes statuts
     document.querySelectorAll('fieldset input').forEach(input => {
         input.addEventListener('change', updateMap);
     });
-    // Inputs surface
     document.getElementById('surface-min').addEventListener('input', updateMap);
     document.getElementById('surface-max').addEventListener('input', updateMap);
 }
 
+// Écouteur de zoom pour afficher/cacher les polygones dynamiquement
+map.on('zoomend', updateMap);
+
 function updateMap() {
-    // Récup valeurs
     const valEpci = selEpci.value;
     const valCommune = selCommune.value;
     const valFriche = selFriche.value;
-
     const surfMin = parseFloat(document.getElementById('surface-min').value) || 0;
     const surfMax = parseFloat(document.getElementById('surface-max').value) || Infinity;
-
-    // Statuts cochés
     const checkedBoxes = document.querySelectorAll('fieldset input:checked');
-    const allowedStatuses = Array.from(checkedBoxes).map(cb => cb.value); // ex: ['friche sans projet']
+    const allowedStatuses = Array.from(checkedBoxes).map(cb => cb.value);
+
+    // On récupère le zoom actuel
+    const currentZoom = map.getZoom();
+    const showPolygons = currentZoom >= ZOOM_THRESHOLD;
+
+    // On vide le groupe de polygones avant de le remplir à nouveau
+    polygonsLayerGroup.clearLayers();
 
     markers.forEach(item => {
         const d = item.data;
         let visible = true;
 
-        // 1. Filtres Listes
+        // --- Filtres Données ---
         if (valEpci && d.epci_nom !== valEpci) visible = false;
         if (visible && valCommune && d.comm_nom !== valCommune) visible = false;
         if (visible && valFriche && d.site_nom !== valFriche) visible = false;
-
-        // 2. Filtre Statut (Exactement la demande : décoché = masqué)
-        if (visible) {
-            // Note: d.site_statut est la valeur du CSV. 
-            // On compare avec le tableau des cases cochées.
-            // .toLowerCase() par sécurité si besoin
-            if (!allowedStatuses.includes(d.site_statut)) visible = false;
-        }
-
-        // 3. Filtre Surface
+        if (visible && !allowedStatuses.includes(d.site_statut)) visible = false;
+        
         const s = d.unite_fonciere_surface || 0;
         if (visible && (s < surfMin || s > surfMax)) visible = false;
 
-        // Rendu
+        // --- Gestion Affichage Marker ---
         if (visible) {
             if (!map.hasLayer(item.marker)) item.marker.addTo(map);
+            
+            // --- Gestion Affichage Polygone (Si zoom OK et friche visible) ---
+            if (showPolygons && d.site_id && polygonsDict[d.site_id]) {
+                polygonsLayerGroup.addLayer(polygonsDict[d.site_id]);
+            }
+
         } else {
             if (map.hasLayer(item.marker)) map.removeLayer(item.marker);
+            // Le polygone est géré par le clearLayers() au début, 
+            // donc si visible=false, on ne le réajoute pas.
         }
     });
 }
 
 /* ------------------------------------------------------------------------- */
-/* 6. UI Panneau Latéral                                                    */
+/* 7. UI Panneau                                                            */
 /* ------------------------------------------------------------------------- */
 const btnOpen = document.getElementById('toggle-filters');
 const btnClose = document.getElementById('close-filters');
@@ -271,8 +311,6 @@ if (btnClose && panel) {
         panel.classList.remove('open');
     });
 }
-
-// Fermeture au clic sur la carte
 map.on('click', () => {
     panel.classList.remove('open');
 });
