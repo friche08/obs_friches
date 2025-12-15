@@ -1,23 +1,23 @@
-/* ------------------------------------------------------------------------- */
-/*  Base                                                                      */
-/* ------------------------------------------------------------------------- */
-
+/* Base */
 body {
   margin: 0;
   font-family: Arial, sans-serif;
+  background-color: #f4f4f4; /* Pour voir les bords de la carte */
+}
+
+.header-container {
+  padding: 10px;
+  max-width: 90%;
+  margin: 0 auto;
 }
 
 h1 {
-  margin: 0;
-  padding: 10px;
+  margin: 0 0 10px 0;
+  font-size: 1.5rem;
 }
 
-/* ------------------------------------------------------------------------- */
-/*  Bouton filtres                                                            */
-/* ------------------------------------------------------------------------- */
-
+/* Bouton filtres */
 #toggle-filters {
-  margin: 10px;
   padding: 8px 12px;
   font-size: 1rem;
   background: #333;
@@ -25,82 +25,76 @@ h1 {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  z-index: 1100;
-  position: relative;
 }
 
-/* ------------------------------------------------------------------------- */
-/*  Carte                                                                     */
-/* ------------------------------------------------------------------------- */
-
+/* Carte : 90% de largeur pour le scroll mobile */
 #map {
-  width: calc(100% - 20px);
-  height: 85vh;
-  margin: 0 10px;
+  width: 90%;
+  height: 80vh;
+  margin: 0 auto; /* Centré horizontalement */
   border: 1px solid #ccc;
   border-radius: 6px;
-  touch-action: pan-y;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  /* Important pour le tactile : */
+  touch-action: pan-y; 
 }
 
-/* ------------------------------------------------------------------------- */
-/*  PANNEAU FILTRES — TOUJOURS OFF-CANVAS PAR DÉFAUT                           */
-/* ------------------------------------------------------------------------- */
-
+/* PANNEAU FILTRES — CÔTÉ DROIT */
 #filters-panel {
   position: fixed;
   top: 0;
-  left: 0;
+  right: 0; /* Collé à droite */
+  left: auto; /* On annule le left */
 
   width: 300px;
-  max-width: 90%;
+  max-width: 85%;
   height: 100%;
 
-  background: #f7f7f7;
-  border-right: 1px solid #ccc;
+  background: #fff;
+  border-left: 1px solid #ccc; /* Bordure à gauche maintenant */
+  box-shadow: -2px 0 5px rgba(0,0,0,0.1);
 
-  padding: 10px;
+  padding: 15px;
   box-sizing: border-box;
   overflow-y: auto;
 
-  /* 👇 CACHÉ PAR DÉFAUT */
-  transform: translateX(-100%);
+  /* Caché vers la droite */
+  transform: translateX(100%);
   transition: transform 0.3s ease;
-
-  z-index: 1000;
+  z-index: 2000;
 }
 
-/* 👇 VISIBLE UNIQUEMENT AVEC LA CLASSE */
 #filters-panel.open {
   transform: translateX(0);
 }
 
-/* ------------------------------------------------------------------------- */
-/*  Filtres                                                                   */
-/* ------------------------------------------------------------------------- */
-
-.filter-group {
-  margin-bottom: 15px;
-}
-
-.filter-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-size: 0.9rem;
-}
-
-.filter-group select,
-.filter-group input {
-  width: 100%;
-  padding: 5px;
-  box-sizing: border-box;
-}
-
-.surface-inputs {
+.panel-header {
   display: flex;
-  gap: 5px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.panel-header h2 { margin: 0; }
+#close-filters {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
 }
 
-fieldset.filter-group {
-  border: 1px solid #ccc;
-  padding: 8px;
+/* Styles filtres */
+.filter-group { margin-bottom: 15px; }
+.filter-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem;}
+.filter-group select, .filter-group input[type="number"] {
+  width: 100%; padding: 8px; box-sizing: border-box;
+  border: 1px solid #ddd; border-radius: 4px;
+}
+.surface-inputs { display: flex; gap: 5px; }
+fieldset.filter-group { border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: #fafafa;}
+fieldset label { font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 8px;}
+
+/* CSS pour les pictos SVG (optionnel car géré par le SVG lui-même) */
+.picto {
+  background: transparent;
+  border: none;
 }
