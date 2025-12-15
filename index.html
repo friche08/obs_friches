@@ -5,25 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Observatoire friches Ardennes</title>
 
-  <!-- Feuille de style Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
 
-  <!-- Notre CSS -->
+  <!-- CSS du projet -->
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
 
   <h1>Observatoire des friches des Ardennes</h1>
 
   <!-- Bouton filtres -->
-  <button id="toggle-filters" aria-label="Afficher les filtres">
+  <button id="toggle-filters" type="button">
     ☰ Filtres
   </button>
 
   <!-- Carte -->
   <div id="map"></div>
 
-  <!-- Panneau de filtres -->
+  <!-- Panneau filtres (off-canvas) -->
   <aside id="filters-panel">
 
     <h2>Filtres</h2>
@@ -86,13 +90,12 @@
 
   </aside>
 
-  <!-- Librairies + script -->
+  <!-- Librairies -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <!-- Script principal -->
   <script src="script.js"></script>
 
 </body>
 </html>
-
-
-
