@@ -248,7 +248,21 @@ function populateSelect(selectElement, dataList, key) {
     
     const defaultOption = document.createElement('option');
     defaultOption.value = defaultOptionValue;
-    defaultOption.textContent = `Toutes les ${key.split('_')[0]}s`; // Texte générique
+
+    // Définition des textes personnalisés pour l'option par défaut
+    let defaultText = ''; 
+    if (key === 'epci_nom') {
+        defaultText = '--- Tous les EPCI ---';
+    } else if (key === 'comm_nom') {
+        defaultText = '--- Toutes les communes ---';
+    } else if (key === 'site_nom') {
+        defaultText = '--- Toutes les friches ---';
+    } else {
+        // Fallback si la clé n'est pas reconnue
+        defaultText = `Toutes les ${key.split('_')[0]}s`; 
+    }
+    
+    defaultOption.textContent = defaultText;
     selectElement.appendChild(defaultOption);
 
     const values = [...new Set(dataList.map(d => d[key]))].filter(Boolean).sort();
@@ -264,7 +278,7 @@ function populateSelect(selectElement, dataList, key) {
     if (currentSelectedValue && selectElement.querySelector(`option[value="${currentSelectedValue}"]`)) {
         selectElement.value = currentSelectedValue;
     } else {
-        // Sinon, on sélectionne l'option "Tous..." (la première)
+        // Sinon, on sélectionne l'option par défaut
         selectElement.value = defaultOptionValue;
     }
 }
@@ -348,3 +362,4 @@ if (btnClose && panel) {
 map.on('click', () => {
     panel.classList.remove('open');
 });
+
