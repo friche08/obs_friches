@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------------- */
-/* 1. Initialisation de la carte                                            */
+/* 1. Initialisation                                                        */
 /* ------------------------------------------------------------------------- */
 const map = L.map('map').setView([49.7, 4.7], 9);
 
@@ -7,218 +7,272 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-/* ------------------------------------------------------------------------- */
-/* 2. Variables Globales                                                    */
-/* ------------------------------------------------------------------------- */
-let allData = [];     // Stocke toutes les lignes du CSV
-let markers = [];     // Stocke les objets { marker, data } pour pouvoir les filtrer
+let allData = [];     // Données brutes
+let markers = [];     // Stockage pour gestion affichage/filtrage
 
 /* ------------------------------------------------------------------------- */
-/* 3. Chargement des données                                                */
+/* 2. Chargement des données                                                */
 /* ------------------------------------------------------------------------- */
 Papa.parse('data.csv', {
   download: true,
   header: true,
-  dynamicTyping: true, // Convertit auto les nombres (ex: surface)
+  dynamicTyping: true,
   skipEmptyLines: true,
-
   complete: function (results) {
     allData = results.data;
     
-    // 1. Créer les marqueurs sur la carte
-    createMarkers(allData);
+    // Initialisation des marqueurs (avec ton style SVG)
+    addMarkers(allData);
     
-    // 2. Remplir les listes déroulantes (EPCI, Communes...)
-    populateFilters(allData);
+    // Initialisation des listes déroulantes (Hiérarchie)
+    initCascadingFilters();
     
-    // 3. Activer l'écoute sur les filtres (dès qu'on touche, ça met à jour)
+    // Écouteurs pour le filtrage temps réel
     initFilterListeners();
     
-    console.log('Données chargées et prêtes :', allData.length);
-  },
-
-  error: function (error) {
-    console.error('Erreur CSV :', error);
+    // Premier filtrage pour respecter les checkbox par défaut
+    updateMap(); 
   }
 });
 
 /* ------------------------------------------------------------------------- */
-/* 4. Création des marqueurs                                                */
+/* 3. Fonctions SVG et Marqueurs (TON CODE INTÉGRÉ)                        */
 /* ------------------------------------------------------------------------- */
-function createMarkers(data) {
-  // Nettoyage au cas où on recharge
+
+function getColorForStatus(status) {
+  const colors = {
+    "friche potentielle": "#aea397",
+    "friche sans projet": "#745b47",
+    "friche avec projet": "#2b7756",
+    "friche reconvertie": "#99c221"
+  };
+  return colors[status] || "#777777";
+}
+
+function createSvgPicto(pictocol) {
+  return `
+<svg width="19.2" height="19.2" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <rect x="3.6" y="3.6" width="12" height="12" rx="3"
+       fill="${pictocol}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round">
+    <animate attributeName="x" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/>
+    <animate attributeName="y" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/>
+    <animate attributeName="width" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/>
+    <animate attributeName="height" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/>
+    <animate attributeName="stroke-width" dur="0.4s" begin="mouseover" from="1.6" to="3.2" fill="freeze"/>
+    <animate attributeName="x" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/>
+    <animate attributeName="y" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/>
+    <animate attributeName="width" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/>
+    <animate attributeName="height" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/>
+    <animate attributeName="stroke-width" dur="0.4s" begin="mouseout" from="3.2" to="1.6" fill="freeze"/>
+  </rect>
+</svg>`;
+}
+
+function createPictoIcon(svg) {
+  return L.divIcon({
+    className: "picto",
+    html: svg,
+    iconSize: [19.2, 19.2],
+    iconAnchor: [9.6, 9.6],
+    popupAnchor: [0, -10]
+  });
+}
+
+function addMarkers(rows) {
+  // Nettoyage préalable si rappel de fonction
   markers.forEach(m => map.removeLayer(m.marker));
   markers = [];
 
-  data.forEach(row => {
-    if (!row.latitude || !row.longitude) return;
+  rows.forEach(row => {
+    const lat = parseFloat(row.latitude);
+    const lon = parseFloat(row.longitude);
 
-    // Création du marqueur
-    const marker = L.marker([row.latitude, row.longitude]);
+    if (isNaN(lat) || isNaN(lon)) return;
 
-    // Popup informative
-    const surface = row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue';
+    const pictocol = getColorForStatus(row.site_statut);
+    const svgpicto = createSvgPicto(pictocol);
+    const picto = createPictoIcon(svgpicto);
+
+    const marker = L.marker([lat, lon], {
+      icon: picto,
+      title: row.site_nom,
+      riseOnHover: true
+    });
+
+    // Ajout Popup
+    const surf = row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue';
     marker.bindPopup(`
-      <strong>${row.site_nom || 'Friche sans nom'}</strong><br>
-      <em>${row.site_type || ''}</em><br>
-      <hr style="margin:5px 0;">
-      Commune : ${row.comm_nom}<br>
-      Statut : ${row.site_statut}<br>
-      Surface : ${surface}
+        <strong>${row.site_nom || 'Friche'}</strong><br>
+        ${row.comm_nom}<br>
+        <span style="color:${pictocol}">⬤</span> ${row.site_statut}<br>
+        Surface: ${surf}
     `);
 
-    marker.addTo(map);
-
-    // On stocke le marqueur ET les données associées pour le filtrage futur
-    markers.push({ marker: marker, data: row });
-  });
-}
-
-/* ------------------------------------------------------------------------- */
-/* 5. Remplissage dynamique des Selects (EPCI, Commune)                     */
-/* ------------------------------------------------------------------------- */
-function populateFilters(data) {
-  // --- A. EPCI ---
-  // On récupère les noms uniques, on filtre les vides, et on trie par ordre alphabétique
-  const epcis = [...new Set(data.map(d => d.epci_nom))].filter(Boolean).sort();
-  const selectEpci = document.getElementById('filter-epci');
-  
-  epcis.forEach(epci => {
-    const option = document.createElement('option');
-    option.value = epci;
-    option.textContent = epci;
-    selectEpci.appendChild(option);
-  });
-
-  // --- B. Communes ---
-  const communes = [...new Set(data.map(d => d.comm_nom))].filter(Boolean).sort();
-  const selectCommune = document.getElementById('filter-commune');
-  
-  communes.forEach(commune => {
-    const option = document.createElement('option');
-    option.value = commune;
-    option.textContent = commune;
-    selectCommune.appendChild(option);
-  });
-
-  // --- C. Liste des friches (Optionnel, si la liste est longue c'est lourd) ---
-  const friches = [...new Set(data.map(d => d.site_nom))].filter(Boolean).sort();
-  const selectFriche = document.getElementById('filter-friche');
-  
-  friches.forEach(nom => {
-    const option = document.createElement('option');
-    option.value = nom;
-    option.textContent = nom;
-    selectFriche.appendChild(option);
-  });
-}
-
-/* ------------------------------------------------------------------------- */
-/* 6. Logique de Filtrage                                                   */
-/* ------------------------------------------------------------------------- */
-
-// Fonction qui ajoute les "écouteurs" sur tous les inputs du panneau
-function initFilterListeners() {
-  const inputs = document.querySelectorAll('#filters-panel select, #filters-panel input');
-  
-  inputs.forEach(input => {
-    // À chaque changement, on lance la fonction updateMap
-    input.addEventListener('change', updateMap);
-    // Pour les nombres, on peut aussi écouter 'input' pour du temps réel
-    if(input.type === 'number') {
-        input.addEventListener('input', updateMap);
-    }
-  });
-}
-
-// Fonction principale qui décide qui reste affiché
-function updateMap() {
-  // 1. Récupérer les valeurs choisies par l'utilisateur
-  const selectedEpci = document.getElementById('filter-epci').value;
-  const selectedCommune = document.getElementById('filter-commune').value;
-  const selectedFriche = document.getElementById('filter-friche').value;
-  
-  const minSurf = parseFloat(document.getElementById('surface-min').value) || 0;
-  const maxSurf = parseFloat(document.getElementById('surface-max').value) || Infinity;
-
-  // Récupérer les statuts cochés (checkboxes)
-  // On crée un tableau avec les valeurs des cases cochées (ex: ['friche sans projet', 'friche reconvertie'])
-  const checkedStatusInputs = document.querySelectorAll('fieldset.filter-group input[type="checkbox"]:checked');
-  const activeStatuses = Array.from(checkedStatusInputs).map(cb => cb.value);
-
-  // 2. Boucler sur tous les marqueurs stockés
-  markers.forEach(item => {
-    const d = item.data; // les données brutes de la ligne CSV
-    let isVisible = true;
-
-    // --- Filtre EPCI ---
-    if (selectedEpci && d.epci_nom !== selectedEpci) {
-      isVisible = false;
-    }
-
-    // --- Filtre Commune ---
-    if (isVisible && selectedCommune && d.comm_nom !== selectedCommune) {
-      isVisible = false;
-    }
-
-    // --- Filtre Nom Friche ---
-    if (isVisible && selectedFriche && d.site_nom !== selectedFriche) {
-      isVisible = false;
-    }
-
-    // --- Filtre Statut (Checkbox) ---
-    // On vérifie si le statut de la ligne est inclus dans la liste des cases cochées
-    // Note: on met tout en minuscule pour éviter les erreurs de casse
-    if (isVisible && activeStatuses.length > 0) {
-       // Si le statut de la donnée n'est pas dans la liste des cochés -> on cache
-       if (!activeStatuses.includes(d.site_statut)) {
-         isVisible = false;
-       }
-    } else if (isVisible && activeStatuses.length === 0) {
-       // Si l'utilisateur décoche tout, on considère qu'il ne veut rien voir (ou tout ? ici rien)
-       isVisible = false; 
-    }
-
-    // --- Filtre Surface ---
-    // Utilisation de la colonne unite_fonciere_surface
-    const surf = d.unite_fonciere_surface || 0;
-    if (isVisible) {
-      if (surf < minSurf || surf > maxSurf) {
-        isVisible = false;
-      }
-    }
-
-    // 3. Appliquer la visibilité sur la carte
-    if (isVisible) {
-      item.marker.addTo(map);
-    } else {
-      map.removeLayer(item.marker);
-    }
-  });
-}
-
-/* ------------------------------------------------------------------------- */
-/* 7. Gestion du panneau latéral (UI)                                       */
-/* ------------------------------------------------------------------------- */
-const toggleButton = document.getElementById('toggle-filters');
-const filtersPanel = document.getElementById('filters-panel');
-
-if (toggleButton && filtersPanel) {
-  toggleButton.addEventListener('click', (e) => {
-    e.stopPropagation(); // Empêche le clic de se propager à la carte
-    filtersPanel.classList.toggle('open');
+    // AJOUT IMPORTANT : On ne l'ajoute pas direct à la carte (addTo(map)),
+    // on le stocke dans le tableau 'markers' pour que le filtrage gère l'affichage.
+    // (Mais on peut l'ajouter initialement et laisser le filtre faire le tri juste après).
+    marker.addTo(map); 
     
-    // Petit bonus : changer le texte du bouton
-    if(filtersPanel.classList.contains('open')){
-        toggleButton.textContent = '✕ Fermer';
-    } else {
-        toggleButton.textContent = '☰ Filtres';
-    }
+    markers.push({
+      marker: marker,
+      data: row
+    });
   });
 }
 
-// Fermer le panneau si on clique sur la carte (UX sympa)
+/* ------------------------------------------------------------------------- */
+/* 4. Logique de Filtres Hiérarchiques (Cascade)                            */
+/* ------------------------------------------------------------------------- */
+
+const selEpci = document.getElementById('filter-epci');
+const selCommune = document.getElementById('filter-commune');
+const selFriche = document.getElementById('filter-friche');
+
+function initCascadingFilters() {
+    // 1. Remplir EPCI (niveau le plus haut)
+    populateSelect(selEpci, allData, 'epci_nom');
+
+    // 2. Écouteurs pour la cascade
+    
+    // Quand EPCI change -> Mettre à jour Communes
+    selEpci.addEventListener('change', () => {
+        updateCommuneOptions();
+        updateFricheOptions(); // Reset friches aussi
+        updateMap(); // Filtrage carte
+    });
+
+    // Quand Commune change -> Mettre à jour Friches
+    selCommune.addEventListener('change', () => {
+        updateFricheOptions();
+        updateMap(); // Filtrage carte
+    });
+
+    // Quand Friche change -> Juste la carte
+    selFriche.addEventListener('change', updateMap);
+}
+
+// Fonction utilitaire pour remplir un select
+function populateSelect(selectElement, dataList, key) {
+    // Garder l'option "Tous..."
+    const defaultOption = selectElement.options[0];
+    selectElement.innerHTML = '';
+    selectElement.appendChild(defaultOption);
+
+    const values = [...new Set(dataList.map(d => d[key]))].filter(Boolean).sort();
+    
+    values.forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = val;
+        selectElement.appendChild(opt);
+    });
+}
+
+function updateCommuneOptions() {
+    const selectedEpci = selEpci.value;
+    
+    // Si un EPCI est choisi, on ne garde que les communes de cet EPCI
+    // Sinon (vide), on prend toutes les données
+    const filteredData = selectedEpci 
+        ? allData.filter(d => d.epci_nom === selectedEpci)
+        : allData;
+
+    populateSelect(selCommune, filteredData, 'comm_nom');
+}
+
+function updateFricheOptions() {
+    const selectedEpci = selEpci.value;
+    const selectedCommune = selCommune.value;
+
+    let filteredData = allData;
+
+    if (selectedEpci) {
+        filteredData = filteredData.filter(d => d.epci_nom === selectedEpci);
+    }
+    if (selectedCommune) {
+        filteredData = filteredData.filter(d => d.comm_nom === selectedCommune);
+    }
+
+    populateSelect(selFriche, filteredData, 'site_nom');
+}
+
+/* ------------------------------------------------------------------------- */
+/* 5. Logique de Filtrage (Moteur)                                          */
+/* ------------------------------------------------------------------------- */
+
+function initFilterListeners() {
+    // Checkboxes statuts
+    document.querySelectorAll('fieldset input').forEach(input => {
+        input.addEventListener('change', updateMap);
+    });
+    // Inputs surface
+    document.getElementById('surface-min').addEventListener('input', updateMap);
+    document.getElementById('surface-max').addEventListener('input', updateMap);
+}
+
+function updateMap() {
+    // Récup valeurs
+    const valEpci = selEpci.value;
+    const valCommune = selCommune.value;
+    const valFriche = selFriche.value;
+
+    const surfMin = parseFloat(document.getElementById('surface-min').value) || 0;
+    const surfMax = parseFloat(document.getElementById('surface-max').value) || Infinity;
+
+    // Statuts cochés
+    const checkedBoxes = document.querySelectorAll('fieldset input:checked');
+    const allowedStatuses = Array.from(checkedBoxes).map(cb => cb.value); // ex: ['friche sans projet']
+
+    markers.forEach(item => {
+        const d = item.data;
+        let visible = true;
+
+        // 1. Filtres Listes
+        if (valEpci && d.epci_nom !== valEpci) visible = false;
+        if (visible && valCommune && d.comm_nom !== valCommune) visible = false;
+        if (visible && valFriche && d.site_nom !== valFriche) visible = false;
+
+        // 2. Filtre Statut (Exactement la demande : décoché = masqué)
+        if (visible) {
+            // Note: d.site_statut est la valeur du CSV. 
+            // On compare avec le tableau des cases cochées.
+            // .toLowerCase() par sécurité si besoin
+            if (!allowedStatuses.includes(d.site_statut)) visible = false;
+        }
+
+        // 3. Filtre Surface
+        const s = d.unite_fonciere_surface || 0;
+        if (visible && (s < surfMin || s > surfMax)) visible = false;
+
+        // Rendu
+        if (visible) {
+            if (!map.hasLayer(item.marker)) item.marker.addTo(map);
+        } else {
+            if (map.hasLayer(item.marker)) map.removeLayer(item.marker);
+        }
+    });
+}
+
+/* ------------------------------------------------------------------------- */
+/* 6. UI Panneau Latéral                                                    */
+/* ------------------------------------------------------------------------- */
+const btnOpen = document.getElementById('toggle-filters');
+const btnClose = document.getElementById('close-filters');
+const panel = document.getElementById('filters-panel');
+
+if (btnOpen && panel) {
+    btnOpen.addEventListener('click', (e) => {
+        e.stopPropagation();
+        panel.classList.add('open');
+    });
+}
+if (btnClose && panel) {
+    btnClose.addEventListener('click', () => {
+        panel.classList.remove('open');
+    });
+}
+
+// Fermeture au clic sur la carte
 map.on('click', () => {
-  filtersPanel.classList.remove('open');
-  toggleButton.textContent = '☰ Filtres';
+    panel.classList.remove('open');
 });
