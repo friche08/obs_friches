@@ -123,3 +123,21 @@ function addMarkers(rows) {
     marker.bindPopup(popupHtml);
   });
 }
+
+/* ------------------------------------------------------------------------- */
+/*  Ouverture / fermeture du panneau de filtres                               */
+/* ------------------------------------------------------------------------- */
+
+// On récupère le bouton "Filtres"
+const toggleButton = document.getElementById('toggle-filters');
+
+// On récupère le panneau de filtres
+const filtersPanel = document.getElementById('filters-panel');
+
+// Quand on clique sur le bouton
+toggleButton.addEventListener('click', () => {
+  // On ajoute ou enlève la classe "open"
+  // (c'est le CSS qui fait glisser le panneau)
+  filtersPanel.classList.toggle('open');
+});
+
