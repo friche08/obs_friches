@@ -1,15 +1,15 @@
 /* ------------------------------------------------------------------------- */
-/*  Styles généraux                                                           */
+/*  Base                                                                      */
 /* ------------------------------------------------------------------------- */
 
 body {
-  font-family: Arial, sans-serif;
   margin: 0;
+  font-family: Arial, sans-serif;
 }
 
 h1 {
-  padding: 10px;
   margin: 0;
+  padding: 10px;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -19,32 +19,31 @@ h1 {
 #toggle-filters {
   margin: 10px;
   padding: 8px 12px;
-
   font-size: 1rem;
   background: #333;
-  color: white;
+  color: #fff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  z-index: 1100;
+  position: relative;
 }
 
 /* ------------------------------------------------------------------------- */
-/*  Carte Leaflet                                                             */
+/*  Carte                                                                     */
 /* ------------------------------------------------------------------------- */
 
 #map {
   width: calc(100% - 20px);
   height: 85vh;
   margin: 0 10px;
-
   border: 1px solid #ccc;
   border-radius: 6px;
-
   touch-action: pan-y;
 }
 
 /* ------------------------------------------------------------------------- */
-/*  Panneau de filtres (off-canvas)                                           */
+/*  PANNEAU FILTRES — TOUJOURS OFF-CANVAS PAR DÉFAUT                           */
 /* ------------------------------------------------------------------------- */
 
 #filters-panel {
@@ -61,21 +60,22 @@ h1 {
 
   padding: 10px;
   box-sizing: border-box;
-
   overflow-y: auto;
 
+  /* 👇 CACHÉ PAR DÉFAUT */
   transform: translateX(-100%);
   transition: transform 0.3s ease;
 
   z-index: 1000;
 }
 
+/* 👇 VISIBLE UNIQUEMENT AVEC LA CLASSE */
 #filters-panel.open {
   transform: translateX(0);
 }
 
 /* ------------------------------------------------------------------------- */
-/*  Filtres : mise en forme                                                   */
+/*  Filtres                                                                   */
 /* ------------------------------------------------------------------------- */
 
 .filter-group {
@@ -89,7 +89,7 @@ h1 {
 }
 
 .filter-group select,
-.filter-group input[type="number"] {
+.filter-group input {
   width: 100%;
   padding: 5px;
   box-sizing: border-box;
@@ -103,21 +103,4 @@ h1 {
 fieldset.filter-group {
   border: 1px solid #ccc;
   padding: 8px;
-}
-
-fieldset.filter-group legend {
-  font-size: 0.9rem;
-}
-
-fieldset.filter-group label {
-  display: block;
-  font-size: 0.85rem;
-}
-
-/* ------------------------------------------------------------------------- */
-/*  SVG Leaflet                                                               */
-/* ------------------------------------------------------------------------- */
-
-.picto svg rect {
-  pointer-events: visiblePainted;
 }
