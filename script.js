@@ -45,8 +45,7 @@ Papa.parse('data.csv', {
         loadArdennesOutline(); 
         initCascadingFilters();
         initFilterListeners(); 
-        
-        // Premier affichage forcé
+        // Premier rendu sans zoom automatique pour garder la vue d'ensemble au départ
         updateMap(false); 
     }
 });
@@ -94,28 +93,20 @@ function loadArdennesOutline() {
 /* ------------------------------------------------------------------------- */
 
 function getFilteredData() {
-    // Vérification des checkboxes
+    const surfMin = parseFloat(document.getElementById('surface-min').value) || 0;
+    const surfMax = parseFloat(document.getElementById('surface-max').value) || Infinity;
     const checkedBoxes = document.querySelectorAll('fieldset input:checked');
     const allowedStatuses = Array.from(checkedBoxes).map(cb => cb.value);
 
-    // Vérification des surfaces
-    const sMin = document.getElementById('surface-min');
-    const sMax = document.getElementById('surface-max');
-    const surfMin = sMin ? parseFloat(sMin.value) || 0 : 0;
-    const surfMax = sMax ? parseFloat(sMax.value) || Infinity : Infinity;
-
     return allData.filter(d => {
-        if (allowedStatuses.length > 0 && !allowedStatuses.includes(d.site_statut)) return false;
+        if (!allowedStatuses.includes(d.site_statut)) return false;
         const s = d.unite_fonciere_surface || 0;
         return (s >= surfMin && s <= surfMax);
     });
 }
 
 function initCascadingFilters() {
-    if (!selEpci || !selCommune || !selFriche) return;
-    
     updateFilterOptions();
-    
     selEpci.addEventListener('change', updateFilterOptions);
     selCommune.addEventListener('change', updateFilterOptions);
     selFriche.addEventListener('change', () => updateMap(true));
@@ -124,23 +115,23 @@ function initCascadingFilters() {
 function updateFilterOptions() {
     const baseData = getFilteredData();
     
-    if (selEpci) populateSelect(selEpci, baseData, 'epci_nom', '- Tous les EPCI -');
+    populateSelect(selEpci, baseData, 'epci_nom', '- Tous les EPCI -');
 
-    const selectedEpci = selEpci ? selEpci.value : "";
+    const selectedEpci = selEpci.value;
     let filteredCommunes = baseData;
     if (selectedEpci) filteredCommunes = filteredCommunes.filter(d => d.epci_nom === selectedEpci);
-    if (selCommune) populateSelect(selCommune, filteredCommunes, 'comm_nom', '- Toutes les communes -');
+    populateSelect(selCommune, filteredCommunes, 'comm_nom', '- Toutes les communes -');
     
-    const selectedCommune = selCommune ? selCommune.value : "";
+    const selectedCommune = selCommune.value;
     let filteredFriches = filteredCommunes; 
     if (selectedCommune) filteredFriches = filteredFriches.filter(d => d.comm_nom === selectedCommune);
-    if (selFriche) populateSelect(selFriche, filteredFriches, 'site_nom', '- Toutes les friches -');
+    populateSelect(selFriche, filteredFriches, 'site_nom', '- Toutes les friches -');
     
+    // On passe "true" pour déclencher le zoom car c'est une action de filtre
     updateMap(true);
 }
 
 function populateSelect(selectElement, dataList, key, defaultText) {
-    if (!selectElement) return;
     const currentVal = selectElement.value;
     selectElement.innerHTML = `<option value="">${defaultText}</option>`;
 
@@ -159,10 +150,8 @@ function populateSelect(selectElement, dataList, key, defaultText) {
 
 function initFilterListeners() {
     document.querySelectorAll('fieldset input, #surface-min, #surface-max').forEach(input => {
-        input.addEventListener('change', () => updateFilterOptions());
-        if(input.type === 'number') {
-            input.addEventListener('input', () => updateFilterOptions());
-        }
+        input.addEventListener('change', updateFilterOptions);
+        if(input.type === 'number') input.addEventListener('input', updateFilterOptions);
     });
 }
 
@@ -172,10 +161,9 @@ function initFilterListeners() {
 map.on('zoomend', () => updateMap(false));
 
 function updateMap(shouldFitBounds = false) {
-    const valEpci = selEpci ? selEpci.value : "";
-    const valCommune = selCommune ? selCommune.value : "";
-    const valFriche = selFriche ? selFriche.value : "";
-    
+    const valEpci = selEpci.value;
+    const valCommune = selCommune.value;
+    const valFriche = selFriche.value;
     const baseFilteredData = getFilteredData(); 
     const showPolygons = map.getZoom() >= ZOOM_THRESHOLD;
 
@@ -201,7 +189,8 @@ function updateMap(shouldFitBounds = false) {
         }
     });
 
-    if (shouldFitBounds === true) {
+    // Zoom automatique si demandé (changement de filtre)
+    if (shouldFitBounds) {
         fitMapToVisibleMarkers();
     }
 }
@@ -236,7 +225,16 @@ function getColorForStatus(status) {
 function createSvgPicto(pictocol) {
     return `<svg width="19.2" height="19.2" version="1.1" xmlns="http://www.w3.org/2000/svg">
       <rect x="3.6" y="3.6" width="12" height="12" rx="3" fill="${pictocol}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round">
-        <animate attributeName="x" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/><animate attributeName="y" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/><animate attributeName="width" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/><animate attributeName="height" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/><animate attributeName="stroke-width" dur="0.4s" begin="mouseover" from="1.6" to="3.2" fill="freeze"/><animate attributeName="x" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/><animate attributeName="y" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/><animate attributeName="width" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/><animate attributeName="height" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/><animate attributeName="stroke-width" dur="0.4s" begin="mouseout" from="3.2" to="1.6" fill="freeze"/>
+        <animate attributeName="x" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/>
+        <animate attributeName="y" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/>
+        <animate attributeName="width" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/>
+        <animate attributeName="height" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/>
+        <animate attributeName="stroke-width" dur="0.4s" begin="mouseover" from="1.6" to="3.2" fill="freeze"/>
+        <animate attributeName="x" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/>
+        <animate attributeName="y" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/>
+        <animate attributeName="width" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/>
+        <animate attributeName="height" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/>
+        <animate attributeName="stroke-width" dur="0.4s" begin="mouseout" from="3.2" to="1.6" fill="freeze"/>
       </rect></svg>`;
 }
 
@@ -258,37 +256,16 @@ function addMarkers(rows) {
             riseOnHover: true
         });
 
-        let rawPollution = row.sol_pollution_existe || 'Non renseignée';
-        let valPollution = rawPollution.replace(/pollution/gi, '').trim();
-        valPollution = valPollution.charAt(0).toUpperCase() + valPollution.slice(1);
-
-        let rawProprio = row.proprio_nom ? String(row.proprio_nom) : '';
-        let labelProprio = 'Propriétaire';
-        let valProprio = 'Non renseigné';
-        if (rawProprio) {
-            const list = rawProprio.split('|').map(p => p.trim() === '_X_' ? '(anonymisé)' : p.trim());
-            if (list.length > 1) labelProprio = 'Propriétaires';
-            valProprio = list.join(', ');
-        }
-
         const imagePath = `photos/${row.site_id}.webp`;
-        const altText = `Photo ${row.site_nom} à ${row.comm_nom}`;
-        const surf = row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue';
-
         const popupContent = `
-            <div style="font-family: sans-serif; line-height: 1.4; min-width:200px;">
-                <div style="font-weight: bold; font-size: 1.1em;">${row.site_nom || 'Friche'}</div>
-                <div style="font-style: italic; color: #555; margin-bottom: 5px;">${row.comm_nom || ''}</div>
-                <hr style="border: 0; border-top: 1px solid #ccc; margin: 8px 0;">
-                <div style="text-align: center;">
-                    <img src="${imagePath}" alt="${altText}" style="max-width: 100%; border-radius: 4px;" onerror="this.style.display='none'">
-                </div>
-                <div style="margin-top: 8px;">
-                    <div><strong>Statut :</strong> ${row.site_statut}</div>
-                    <div><strong>Surface :</strong> ${surf}</div>
-                    <div><strong>Pollution :</strong> ${valPollution}</div>
-                    <div><strong>${labelProprio} :</strong> ${valProprio}</div>
-                </div>
+            <div class="popup-header"><h3>${row.site_nom || 'Friche'}</h3><div>${row.comm_nom || ''}</div></div>
+            <hr class="popup-separator">
+            <div class="img-container">
+                <img src="${imagePath}" class="popup-img" onerror="this.parentElement.style.display='none'"/>
+            </div>
+            <div class="popup-details">
+                <div><strong>Statut :</strong> ${row.site_statut}</div>
+                <div><strong>Surface :</strong> ${row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue'}</div>
             </div>`;
 
         marker.bindPopup(popupContent);
@@ -302,18 +279,6 @@ function addMarkers(rows) {
 /* 7. UI Panneau                                                             */
 /* ------------------------------------------------------------------------- */
 const panel = document.getElementById('filters-panel');
-const btnToggle = document.getElementById('toggle-filters');
-const btnClose = document.getElementById('close-filters');
-
-if (btnToggle) {
-    btnToggle.addEventListener('click', (e) => { 
-        e.stopPropagation(); 
-        panel.classList.add('open'); 
-    });
-}
-if (btnClose) {
-    btnClose.addEventListener('click', () => panel.classList.remove('open'));
-}
-map.on('click', () => {
-    if (panel) panel.classList.remove('open');
-});
+document.getElementById('toggle-filters')?.addEventListener('click', (e) => { e.stopPropagation(); panel.classList.add('open'); });
+document.getElementById('close-filters')?.addEventListener('click', () => panel.classList.remove('open'));
+map.on('click', () => panel.classList.remove('open'));
