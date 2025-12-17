@@ -151,37 +151,66 @@ function addMarkers(rows) {
     });
 
     const surf = row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue';
-    // 1. Chemin vers le WebP
-    const imagePath = `photos/${row.site_id}.webp`;
-    
-    // 2. Texte alternatif automatisé
-    // On échappe les guillemets éventuels dans les noms pour ne pas casser le HTML
-    const safeSiteNom = (row.site_nom || '').replace(/"/g, '&quot;');
-    const safeCommNom = (row.comm_nom || '').replace(/"/g, '&quot;');
-    const altText = `photo ${safeSiteNom} à ${safeCommNom}`;
 
-    // 3. Construction du HTML
-    // J'ajoute une classe 'popup-img' pour gérer la taille dans le CSS
-    const imageHtml = `
-      <div class="img-container">
-        <img src="${imagePath}" 
-             alt="${altText}" 
-             class="popup-img"
-             onerror="this.parentElement.style.display='none'"/>
-      </div>
+    // --- 1. Gestion de l'image ---
+    const imagePath = `photos/${row.site_id}.webp`;
+    // On nettoie les guillemets pour l'attribut HTML alt
+    const safeSite = (row.site_nom || '').replace(/"/g, ''); 
+    const safeComm = (row.comm_nom || '').replace(/"/g, '');
+    const altText = `Photo ${safeSite} à ${safeComm}`;
+
+    // --- 2. Gestion des Propriétaires ---
+    let rawProprio = row.proprio_nom ? String(row.proprio_nom) : '';
+    let labelProprio = 'Propriétaire';
+    let valProprio = 'Non renseigné';
+
+    if (rawProprio) {
+        // Découpage par '|' et traitement de l'anonymisation
+        const propriosList = rawProprio.split('|').map(p => {
+            p = p.trim();
+            return p === '_X_' ? '(anonymisé)' : p;
+        });
+        
+        // Pluriel ou singulier
+        if (propriosList.length > 1) labelProprio = 'Propriétaires';
+        valProprio = propriosList.join(', ');
+    }
+
+    // --- 3. Gestion de la Pollution ---
+    // On enlève le mot "pollution" (insensible à la casse) s'il est présent
+    let rawPollution = row.sol_pollution_existe || 'Non renseignée';
+    // Ex: "Pollution suspectée" devient "suspectée"
+    let valPollution = rawPollution.replace(/pollution/gi, '').trim(); 
+    // On met une majuscule au début par propreté
+    valPollution = valPollution.charAt(0).toUpperCase() + valPollution.slice(1);
+
+    // --- 4. Construction du HTML ---
+    const popupContent = `
+        <div class="popup-header">
+            <h3 class="popup-title">${row.site_nom || 'Friche'}</h3>
+            <div class="popup-subtitle">${row.comm_nom || ''}</div>
+        </div>
+        
+        <hr class="popup-separator">
+        
+        <div class="img-container">
+            <img src="${imagePath}" 
+                 alt="${altText}" 
+                 class="popup-img"
+                 onerror="this.parentElement.style.display='none'"/>
+            <div class="img-caption">${altText}</div>
+        </div>
+
+        <div class="popup-details">
+            <div><strong>Statut :</strong> ${row.site_statut}</div>
+            <div><strong>Surface :</strong> ${row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue'}</div>
+            <div><strong>Pollution :</strong> ${valPollution}</div>
+            <div><strong>${labelProprio} :</strong> ${valProprio}</div>
+        </div>
     `;
 
-    marker.bindPopup(`
-        ${imageHtml}
-        <div class="popup-content-text">
-            <strong>${row.site_nom || 'Friche'}</strong><br>
-            ${row.comm_nom}<br>
-            <span style="color:${pictocol}">⬤</span> ${row.site_statut}<br>
-            Surface: ${surf}
-        </div>
-    `);
-
-    marker.addTo(map); 
+    marker.bindPopup(popupContent);
+    marker.addTo(map);
     
     markers.push({
       marker: marker,
@@ -385,6 +414,7 @@ if (btnClose && panel) {
 map.on('click', () => {
     panel.classList.remove('open');
 });
+
 
 
 
