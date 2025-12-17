@@ -151,11 +151,34 @@ function addMarkers(rows) {
     });
 
     const surf = row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue';
+    // 1. Chemin vers le WebP
+    const imagePath = `photos/${row.site_id}.webp`;
+    
+    // 2. Texte alternatif automatisé
+    // On échappe les guillemets éventuels dans les noms pour ne pas casser le HTML
+    const safeSiteNom = (row.site_nom || '').replace(/"/g, '&quot;');
+    const safeCommNom = (row.comm_nom || '').replace(/"/g, '&quot;');
+    const altText = `photo ${safeSiteNom} à ${safeCommNom}`;
+
+    // 3. Construction du HTML
+    // J'ajoute une classe 'popup-img' pour gérer la taille dans le CSS
+    const imageHtml = `
+      <div class="img-container">
+        <img src="${imagePath}" 
+             alt="${altText}" 
+             class="popup-img"
+             onerror="this.parentElement.style.display='none'"/>
+      </div>
+    `;
+
     marker.bindPopup(`
-        <strong>${row.site_nom || 'Friche'}</strong><br>
-        ${row.comm_nom}<br>
-        <span style="color:${pictocol}">⬤</span> ${row.site_statut}<br>
-        Surface: ${surf}
+        ${imageHtml}
+        <div class="popup-content-text">
+            <strong>${row.site_nom || 'Friche'}</strong><br>
+            ${row.comm_nom}<br>
+            <span style="color:${pictocol}">⬤</span> ${row.site_statut}<br>
+            Surface: ${surf}
+        </div>
     `);
 
     marker.addTo(map); 
@@ -362,5 +385,6 @@ if (btnClose && panel) {
 map.on('click', () => {
     panel.classList.remove('open');
 });
+
 
 
