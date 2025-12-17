@@ -98,3 +98,42 @@ fieldset label { font-weight: normal; cursor: pointer; display: flex; align-item
   background: transparent;
   border: none;
 }
+
+/* 1. On force la largeur du contenu du popup Leaflet */
+.leaflet-popup-content {
+    /* La largeur visible sera de 300px */
+    width: 300px !important; 
+    
+    /* Optionnel : supprimer les marges par défaut de Leaflet pour gagner de la place */
+    /* margin: 10px !important; */
+}
+
+/* 2. Style de l'image */
+.popup-img {
+    width: 100%;       /* Prend toute la largeur disponible (300px) */
+    height: auto;      /* Garde les proportions */
+    display: block;    /* Évite les petits espaces blancs sous l'image */
+    border-radius: 4px;
+    margin-bottom: 8px;
+    
+    /* Astuce : si l'image fait 600px réels, width:100% la forcera à 300px 
+       dans ce conteneur -> Effet Retina réussi */
+}
+
+/* 3. Conteneur de l'image (pour gérer l'erreur de chargement proprement) */
+.img-container {
+    min-height: 0; /* Évite des bugs de hauteur sur certains navigateurs */
+}
+
+/* 4. Gestion du Scroll (Ascenseur) */
+.leaflet-popup-content-wrapper {
+    /* Si le contenu est très long, on peut limiter la hauteur globale du popup */
+    max-height: 80vh; /* 80% de la hauteur de l'écran */
+    overflow-y: auto; /* Affiche l'ascenseur si nécessaire */
+}
+
+/* Petit raffinement pour le texte sous l'image */
+.popup-content-text {
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
