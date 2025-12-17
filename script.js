@@ -1,7 +1,15 @@
 /* ------------------------------------------------------------------------- */
-/* 1. Initialisation                                                        */
+/* 1. Initialisation (Mise à jour)                                          */
 /* ------------------------------------------------------------------------- */
-const map = L.map('map').setView([49.7, 4.7], 9);
+// Définition des bornes : coin sud-ouest, coin nord-est
+const bounds = L.latLngBounds([48, 1], [52, 8]);
+
+const map = L.map('map', {
+    minZoom: 8,      // Zoom minimum
+    maxZoom: 18,     // Zoom maximum
+    maxBounds: bounds,
+    maxBoundsViscosity: 1.0 // La carte est "collée" aux bords
+}).setView([49.7, 4.7], 9);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap contributors'
@@ -414,6 +422,7 @@ if (btnClose && panel) {
 map.on('click', () => {
     panel.classList.remove('open');
 });
+
 
 
 
