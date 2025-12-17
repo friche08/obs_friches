@@ -40,15 +40,14 @@ Papa.parse('data.csv', {
         allData = results.data;
         
         addMarkers(allData);
-        initFilters(allData);
+        initFilters(allData);     // Initialise EPCI, Commune ET Friche
         loadGeoJsonData();
         loadArdennesBoundary();
         
-        // Premier affichage + centrage sur les points (true)
-        updateVisibility(true);
+        // Appliquer le filtre par défaut au chargement (selon les checkboxes HTML)
+        updateVisibility();
 
-        // Quand on zoome manuellement, on met juste à jour les polygones (false)
-        map.on('zoomend', () => updateVisibility(false));
+        map.on('zoomend', updateVisibility);
     }
 });
 
@@ -58,13 +57,18 @@ function loadArdennesBoundary() {
     fetch('ardennes.geojson')
         .then(resp => resp.json())
         .then(geojson => {
-            L.geoJSON(geojson, { style: { color: '#ffffff', weight: 5, fill: false, interactive: false } }).addTo(map);
-            L.geoJSON(geojson, { style: { color: '#422d58', weight: 2, fill: false, interactive: false } }).addTo(map);
+            L.geoJSON(geojson, {
+                style: { color: '#ffffff', weight: 5, fill: false, interactive: false }
+            }).addTo(map);
+
+            L.geoJSON(geojson, {
+                style: { color: '#422d58', weight: 2, fill: false, interactive: false }
+            }).addTo(map);
         })
         .catch(err => console.error("Erreur ardennes.geojson", err));
 }
 
-/* 5. FONCTION : CRÉATION DES MARQUEURS
+/* 5. FONCTION : CRÉATION DES MARQUEURS ET POPUPS
    ------------------------------------------------------------------------- */
 function addMarkers(rows) {
     rows.forEach(row => {
@@ -87,12 +91,11 @@ function addMarkers(rows) {
 
         const marker = L.marker([lat, lon], { icon: picto, title: row.site_nom });
 
-        // --- Construction Popup (ÉPURÉE) ---
+        // --- Popup Content ---
         const imagePath = `photos/${row.site_id}.webp`;
-        // Texte alternatif pour l'accessibilité seulement (non affiché)
         const safeSite = (row.site_nom || 'Friche sans nom').replace(/"/g, '&quot;');
         const safeComm = (row.comm_nom || '').replace(/"/g, '&quot;');
-        const altText = `Photo ${safeSite}`;
+        const altText = `Photo ${safeSite} à ${safeComm}`;
 
         let valProprio = 'Non renseigné';
         let labelProprio = 'Propriétaire';
@@ -114,6 +117,7 @@ function addMarkers(rows) {
                 <hr class="popup-separator">
                 <div class="img-container">
                     <img src="${imagePath}" alt="${altText}" class="popup-img" onerror="this.parentElement.style.display='none'">
+                    <div class="img-caption">${altText}</div>
                 </div>
                 <div class="popup-details">
                     <p><strong>Statut :</strong> ${row.site_statut}</p>
@@ -150,73 +154,68 @@ function loadGeoJsonData() {
                     }
                 }
             });
-            // Pas d'appel updateVisibility ici pour éviter conflit au démarrage
+            updateVisibility();
         });
 }
 
-/* 7. FILTRES INTELLIGENTS AVEC ZOOM AUTO
+/* 7. FILTRES INTELLIGENTS
    ------------------------------------------------------------------------- */
-/**
- * @param {boolean} fitMap - Si true, zoome sur les résultats filtrés
- */
-function updateVisibility(fitMap = false) {
+function updateVisibility() {
     const zoom = map.getZoom();
     const showPolygons = zoom >= ZOOM_THRESHOLD;
 
-    // Récupération des filtres
+    // 1. Récupération des valeurs
+    // Checkboxes (Statut)
     const checkedStatuts = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+    
+    // Selects
     const valEpci = document.getElementById('filter-epci').value;
     const valCommune = document.getElementById('filter-commune').value;
-    const valFriche = document.getElementById('filter-friche').value;
+    const valFriche = document.getElementById('filter-friche').value; // ID SITE ou NOM
+    
+    // Surface
     const surfMin = parseFloat(document.getElementById('surface-min').value) || 0;
     const surfMax = parseFloat(document.getElementById('surface-max').value) || Infinity;
 
     polygonsLayerGroup.clearLayers();
-    
-    // Groupe pour stocker les marqueurs visibles afin de calculer le zoom
-    let visibleMarkersGroup = L.featureGroup();
-    let visibleCount = 0;
 
     markers.forEach(item => {
         const d = item.data;
         let visible = true;
 
+        // --- Logique de filtrage ---
+        
+        // 1. Statut
         if (!checkedStatuts.includes(d.site_statut)) visible = false;
+
+        // 2. Localisation
         if (visible && valEpci && d.epci_nom !== valEpci) visible = false;
         if (visible && valCommune && d.comm_nom !== valCommune) visible = false;
-        if (visible && valFriche && d.site_nom !== valFriche) visible = false;
-        
-        const surf = d.unite_fonciere_surface || 0;
-        if (visible && (surf < surfMin || surf > surfMax)) visible = false;
 
+        // 3. Friche spécifique
+        if (visible && valFriche && d.site_nom !== valFriche) visible = false;
+
+        // 4. Surface
+        const surf = d.unite_fonciere_surface || 0;
+        if (visible) {
+            if (surf < surfMin || surf > surfMax) visible = false;
+        }
+
+        // --- Application ---
         if (visible) {
             if (!map.hasLayer(item.marker)) item.marker.addTo(map);
+            
             if (showPolygons && d.site_id && polygonsDict[d.site_id]) {
                 polygonsLayerGroup.addLayer(polygonsDict[d.site_id]);
             }
-            // On ajoute au groupe de visibilité
-            visibleMarkersGroup.addLayer(item.marker);
-            visibleCount++;
         } else {
             if (map.hasLayer(item.marker)) map.removeLayer(item.marker);
         }
     });
-
-    // --- LOGIQUE DE ZOOM ---
-    if (fitMap && visibleCount > 0) {
-        // On récupère les limites de tous les points visibles
-        const bounds = visibleMarkersGroup.getBounds();
-        
-        // On zoome pour englober les points, avec une marge (padding)
-        // maxZoom: 15 empêche de zoomer trop fort si c'est un seul point
-        map.fitBounds(bounds, { 
-            padding: [50, 50], 
-            maxZoom: 15 
-        });
-    }
 }
 
 function initFilters(data) {
+    // A. Remplir EPCI
     const epcis = [...new Set(data.map(d => d.epci_nom))].sort();
     const selectEpci = document.getElementById('filter-epci');
     epcis.forEach(e => { if(e) selectEpci.add(new Option(e, e)); });
@@ -224,41 +223,51 @@ function initFilters(data) {
     const selectCommune = document.getElementById('filter-commune');
     const selectFriche = document.getElementById('filter-friche');
 
+    // Fonction de mise à jour en cascade
     const updateLists = () => {
         const currentEpci = selectEpci.value;
         const currentCommune = selectCommune.value;
+
+        // Filtrer les données disponibles selon les sélections parentes
         let filtered = data;
         if (currentEpci) filtered = filtered.filter(d => d.epci_nom === currentEpci);
         if (currentCommune) filtered = filtered.filter(d => d.comm_nom === currentCommune);
 
+        // 1. Mettre à jour Communes (si on change EPCI)
+        // On sauvegarde la sélection actuelle si possible
         const oldCommune = selectCommune.value;
         selectCommune.innerHTML = '<option value="">- Toutes les communes -</option>';
         const communes = [...new Set(filtered.map(d => d.comm_nom))].sort();
         communes.forEach(c => { if(c) selectCommune.add(new Option(c, c)); });
+        // Restaurer si toujours valide
         if (communes.includes(oldCommune)) selectCommune.value = oldCommune;
 
+        // 2. Mettre à jour Friches
         selectFriche.innerHTML = '<option value="">- Toutes les friches -</option>';
         const friches = [...new Set(filtered.map(d => d.site_nom))].sort();
         friches.forEach(f => { if(f) selectFriche.add(new Option(f, f)); });
     };
 
-    // On crée une petite fonction helper pour "Filtrer ET Zoomer"
-    const filterAndZoom = () => {
-        updateLists();
-        updateVisibility(true); // true = active le zoom
-    };
-
+    // Écouteurs
     selectEpci.addEventListener('change', () => { 
-        selectCommune.value = ""; 
-        filterAndZoom(); 
+        selectCommune.value = ""; // Reset commune si on change EPCI
+        updateLists(); 
+        updateVisibility(); 
     });
-    selectCommune.addEventListener('change', filterAndZoom);
-    selectFriche.addEventListener('change', () => updateVisibility(true)); // Pas besoin updateLists pour friche
+    
+    selectCommune.addEventListener('change', () => { 
+        updateLists(); // Pour affiner la liste des friches
+        updateVisibility(); 
+    });
 
-    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.addEventListener('change', () => updateVisibility(true)));
-    document.getElementById('surface-min').addEventListener('change', () => updateVisibility(true)); // Change au lieu de input pour éviter zoom constant pendant la frappe
-    document.getElementById('surface-max').addEventListener('change', () => updateVisibility(true));
+    selectFriche.addEventListener('change', updateVisibility);
 
+    // Checkboxes & Surface
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.addEventListener('change', updateVisibility));
+    document.getElementById('surface-min').addEventListener('input', updateVisibility);
+    document.getElementById('surface-max').addEventListener('input', updateVisibility);
+
+    // Premier appel pour remplir Communes/Friches au démarrage
     updateLists();
 }
 
