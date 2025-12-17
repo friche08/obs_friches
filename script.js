@@ -1,207 +1,394 @@
-/* =========================================================================
-   CARTE DE L'OBSERVATOIRE DES FRICHES DES ARDENNES
-   ========================================================================= */
-
-/* 1. CONFIGURATION ET INITIALISATION
-   ------------------------------------------------------------------------- */
-const southWest = L.latLng(48, 1);
-const northEast = L.latLng(52, 8);
-const bounds = L.latLngBounds(southWest, northEast);
+/* ------------------------------------------------------------------------- */
+/* 1. Initialisation (Mise à jour)                                          */
+/* ------------------------------------------------------------------------- */
+// Définition des bornes : coin sud-ouest, coin nord-est
+const bounds = L.latLngBounds([48, 1], [52, 8]);
 
 const map = L.map('map', {
-    minZoom: 8,
-    maxZoom: 18,
+    minZoom: 8,      // Zoom minimum
+    maxZoom: 18,     // Zoom maximum
     maxBounds: bounds,
-    maxBoundsViscosity: 1.0
+    maxBoundsViscosity: 1.0 // La carte est "collée" aux bords
 }).setView([49.7, 4.7], 9);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
+  attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-/* 2. VARIABLES GLOBALES
-   ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* 2. Variables Globales                                                    */
+/* ------------------------------------------------------------------------- */
 let allData = [];
-let markers = [];
-let markersDict = {};
+let markers = [];          // Objets { marker, data }
+let markersDict = {};      // Nouveau : { site_id : markerLeaflet } pour lier polygone/popup
 let polygonsDict = {};
 let polygonsLayerGroup = L.layerGroup().addTo(map);
-
 const ZOOM_THRESHOLD = 13;
 
-/* 3. CHARGEMENT DES DONNÉES
-   ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* 3. Chargement des données (CSV puis GeoJSON)                             */
+/* ------------------------------------------------------------------------- */
 Papa.parse('data.csv', {
-    download: true,
-    header: true,
-    dynamicTyping: true,
-    skipEmptyLines: true,
-    complete: function (results) {
-        allData = results.data;
-        
-        addMarkers(allData);
-        initFilters(allData);     // Initialise EPCI, Commune ET Friche
-        loadGeoJsonData();
-        loadArdennesBoundary();
-        
-        // Appliquer le filtre par défaut au chargement (selon les checkboxes HTML)
-        updateVisibility();
+  download: true,
+  header: true,
+  dynamicTyping: true,
+  skipEmptyLines: true,
 
-        map.on('zoomend', updateVisibility);
-    }
+  complete: function (results) {
+    allData = results.data;
+    
+    // 1. Créer les marqueurs
+    addMarkers(allData);
+    
+    // 2. Initialiser les filtres (Listes déroulantes)
+    initCascadingFilters();
+    
+    // 3. Charger le GeoJSON des contours
+    loadGeoJsonData();
+    
+    // 4. Activer les écouteurs de statut et surface
+    initFilterListeners(); 
+
+    // 5. Premier rendu
+    updateMap(); 
+  }
 });
 
-/* 4. FONCTION : CONTOUR DÉPARTEMENTAL
-   ------------------------------------------------------------------------- */
-function loadArdennesBoundary() {
-    fetch('ardennes.geojson')
-        .then(resp => resp.json())
-        .then(geojson => {
-            L.geoJSON(geojson, {
-                style: { color: '#ffffff', weight: 5, fill: false, interactive: false }
-            }).addTo(map);
-
-            L.geoJSON(geojson, {
-                style: { color: '#422d58', weight: 2, fill: false, interactive: false }
-            }).addTo(map);
-        })
-        .catch(err => console.error("Erreur ardennes.geojson", err));
+function loadGeoJsonData() {
+  fetch('friches.geojson')
+    .then(response => response.json())
+    .then(geojson => {
+      L.geoJSON(geojson, {
+        style: function (feature) {
+          const siteId = feature.properties.site_id;
+          const row = allData.find(d => d.site_id === siteId);
+          const color = row ? getColorForStatus(row.site_statut) : '#3388ff';
+          
+          return {
+            color: color,
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.2
+          };
+        },
+        onEachFeature: function (feature, layer) {
+          const id = feature.properties.site_id;
+          if (id) {
+            polygonsDict[id] = layer;
+            
+            // 🚩 NOUVEAUTÉ 1 : Lier le clic du polygone au popup du marqueur
+            layer.on('click', function(e) {
+                // S'assurer que le marqueur existe et est visible
+                if(markersDict[id]) {
+                    markersDict[id].openPopup();
+                }
+            });
+            
+            // Pas besoin de popup ici, on utilise celui du marqueur
+            // layer.bindPopup(feature.properties.nom || feature.properties.site_nom);
+          }
+        }
+      });
+      updateMap();
+    })
+    .catch(err => console.error("Erreur chargement GeoJSON :", err));
 }
 
-/* 5. FONCTION : CRÉATION DES MARQUEURS ET POPUPS
-   ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* 4. Fonctions SVG et Marqueurs (pas de changement)                        */
+/* ------------------------------------------------------------------------- */
+
+function getColorForStatus(status) {
+  const colors = {
+    "friche potentielle": "#aea397",
+    "friche sans projet": "#745b47",
+    "friche avec projet": "#2b7756",
+    "friche reconvertie": "#99c221"
+  };
+  return colors[status] || "#777777";
+}
+
+function createSvgPicto(pictocol) {
+  return `
+<svg width="19.2" height="19.2" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <rect x="3.6" y="3.6" width="12" height="12" rx="3"
+       fill="${pictocol}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round">
+    <animate attributeName="x" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/>
+    <animate attributeName="y" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/>
+    <animate attributeName="width" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/>
+    <animate attributeName="height" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/>
+    <animate attributeName="stroke-width" dur="0.4s" begin="mouseover" from="1.6" to="3.2" fill="freeze"/>
+    <animate attributeName="x" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/>
+    <animate attributeName="y" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/>
+    <animate attributeName="width" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/>
+    <animate attributeName="height" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/>
+    <animate attributeName="stroke-width" dur="0.4s" begin="mouseout" from="3.2" to="1.6" fill="freeze"/>
+  </rect>
+</svg>`;
+}
+
+function createPictoIcon(svg) {
+  return L.divIcon({
+    className: "picto",
+    html: svg,
+    iconSize: [19.2, 19.2],
+    iconAnchor: [9.6, 9.6],
+    popupAnchor: [0, -10]
+  });
+}
+
 function addMarkers(rows) {
-    rows.forEach(row => {
-        const lat = parseFloat(row.site_lat);
-        const lon = parseFloat(row.site_lon);
-        if (isNaN(lat) || isNaN(lon)) return;
+  markers.forEach(m => map.removeLayer(m.marker));
+  markers = [];
+  markersDict = {}; // Réinitialisation
 
-        let pictocol = '#999';
-        if (row.site_statut === 'friche potentielle') pictocol = '#f1c40f';
-        if (row.site_statut === 'friche sans projet') pictocol = '#e67e22';
-        if (row.site_statut === 'friche avec projet') pictocol = '#2ecc71';
-        if (row.site_statut === 'friche reconvertie') pictocol = '#3498db';
+  rows.forEach(row => {
+    const lat = parseFloat(row.latitude);
+    const lon = parseFloat(row.longitude);
 
-        const picto = L.divIcon({
-            className: 'custom-div-icon',
-            html: `<div style="background-color:${pictocol};" class="marker-pin"></div>`,
-            iconSize: [20, 20],
-            iconAnchor: [10, 10]
+    if (isNaN(lat) || isNaN(lon)) return;
+
+    const pictocol = getColorForStatus(row.site_statut);
+    const svgpicto = createSvgPicto(pictocol);
+    const picto = createPictoIcon(svgpicto);
+
+    const marker = L.marker([lat, lon], {
+      icon: picto,
+      title: row.site_nom,
+      riseOnHover: true
+    });
+
+    const surf = row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue';
+
+    // --- 1. Gestion de l'image ---
+    const imagePath = `photos/${row.site_id}.webp`;
+    // On nettoie les guillemets pour l'attribut HTML alt
+    const safeSite = (row.site_nom || '').replace(/"/g, ''); 
+    const safeComm = (row.comm_nom || '').replace(/"/g, '');
+    const altText = `Photo ${safeSite} à ${safeComm}`;
+
+    // --- 2. Gestion des Propriétaires ---
+    let rawProprio = row.proprio_nom ? String(row.proprio_nom) : '';
+    let labelProprio = 'Propriétaire';
+    let valProprio = 'Non renseigné';
+
+    if (rawProprio) {
+        // Découpage par '|' et traitement de l'anonymisation
+        const propriosList = rawProprio.split('|').map(p => {
+            p = p.trim();
+            return p === '_X_' ? '(anonymisé)' : p;
         });
+        
+        // Pluriel ou singulier
+        if (propriosList.length > 1) labelProprio = 'Propriétaires';
+        valProprio = propriosList.join(', ');
+    }
 
-        const marker = L.marker([lat, lon], { icon: picto, title: row.site_nom });
+    // --- 3. Gestion de la Pollution ---
+    // On enlève le mot "pollution" (insensible à la casse) s'il est présent
+    let rawPollution = row.sol_pollution_existe || 'Non renseignée';
+    // Ex: "Pollution suspectée" devient "suspectée"
+    let valPollution = rawPollution.replace(/pollution/gi, '').trim(); 
+    // On met une majuscule au début par propreté
+    valPollution = valPollution.charAt(0).toUpperCase() + valPollution.slice(1);
 
-        // --- Popup Content ---
-        const imagePath = `photos/${row.site_id}.webp`;
-        const safeSite = (row.site_nom || 'Friche sans nom').replace(/"/g, '&quot;');
-        const safeComm = (row.comm_nom || '').replace(/"/g, '&quot;');
-        const altText = `Photo ${safeSite} à ${safeComm}`;
+    // --- 4. Construction du HTML ---
+    const popupContent = `
+        <div class="popup-header">
+            <h3 class="popup-title">${row.site_nom || 'Friche'}</h3>
+            <div class="popup-subtitle">${row.comm_nom || ''}</div>
+        </div>
+        
+        <hr class="popup-separator">
+        
+        <div class="img-container">
+            <img src="${imagePath}" 
+                 alt="${altText}" 
+                 class="popup-img"
+                 onerror="this.parentElement.style.display='none'"/>
+            <div class="img-caption">${altText}</div>
+        </div>
 
-        let valProprio = 'Non renseigné';
-        let labelProprio = 'Propriétaire';
-        if (row.proprio_nom) {
-            const list = String(row.proprio_nom).split('|').map(p => p.trim() === '_X_' ? '(anonymisé)' : p.trim());
-            labelProprio = list.length > 1 ? 'Propriétaires' : 'Propriétaire';
-            valProprio = list.join(', ');
-        }
+        <div class="popup-details">
+            <div><strong>Statut :</strong> ${row.site_statut}</div>
+            <div><strong>Surface :</strong> ${row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue'}</div>
+            <div><strong>Pollution :</strong> ${valPollution}</div>
+            <div><strong>${labelProprio} :</strong> ${valProprio}</div>
+        </div>
+    `;
 
-        let valPollution = (row.sol_pollution_existe || 'Non renseignée').replace(/pollution/gi, '').trim();
-        valPollution = valPollution.charAt(0).toUpperCase() + valPollution.slice(1);
+    marker.bindPopup(popupContent);
+    marker.addTo(map);
+    
+    markers.push({
+      marker: marker,
+      data: row
+    });
+    // Stockage du marqueur pour le lien avec le polygone (si site_id existe)
+    if (row.site_id) {
+        markersDict[row.site_id] = marker;
+    }
+  });
+}
 
-        const popupHTML = `
-            <div class="popup-container">
-                <div class="popup-header">
-                    <div class="popup-title">${safeSite}</div>
-                    <div class="popup-subtitle">${safeComm}</div>
-                </div>
-                <hr class="popup-separator">
-                <div class="img-container">
-                    <img src="${imagePath}" alt="${altText}" class="popup-img" onerror="this.parentElement.style.display='none'">
-                    <div class="img-caption">${altText}</div>
-                </div>
-                <div class="popup-details">
-                    <p><strong>Statut :</strong> ${row.site_statut}</p>
-                    <p><strong>Surface :</strong> ${row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue'}</p>
-                    <p><strong>Pollution :</strong> ${valPollution}</p>
-                    <p><strong>${labelProprio} :</strong> ${valProprio}</p>
-                </div>
-            </div>
-        `;
+/* ------------------------------------------------------------------------- */
+/* 5. Filtres Hiérarchiques (Cascade Intelligente)                          */
+/* ------------------------------------------------------------------------- */
+const selEpci = document.getElementById('filter-epci');
+const selCommune = document.getElementById('filter-commune');
+const selFriche = document.getElementById('filter-friche');
 
-        marker.bindPopup(popupHTML);
-        marker.addTo(map);
+// 🚩 NOUVEAUTÉ 2 : Fonction utilitaire pour récupérer les données après filtre statut/surface
+function getFilteredData() {
+    const surfMin = parseFloat(document.getElementById('surface-min').value) || 0;
+    const surfMax = parseFloat(document.getElementById('surface-max').value) || Infinity;
+    const checkedBoxes = document.querySelectorAll('fieldset input:checked');
+    const allowedStatuses = Array.from(checkedBoxes).map(cb => cb.value);
 
-        markers.push({ marker: marker, data: row });
-        if (row.site_id) markersDict[row.site_id] = marker;
+    return allData.filter(d => {
+        // Filtre Statut
+        if (!allowedStatuses.includes(d.site_statut)) return false;
+        
+        // Filtre Surface
+        const s = d.unite_fonciere_surface || 0;
+        if (s < surfMin || s > surfMax) return false;
+
+        return true;
     });
 }
 
-/* 6. CHARGEMENT GEOJSON
-   ------------------------------------------------------------------------- */
-function loadGeoJsonData() {
-    fetch('data.geojson')
-        .then(r => r.json())
-        .then(geojson => {
-            L.geoJSON(geojson, {
-                style: { color: '#e74c3c', weight: 2, fillOpacity: 0.2 },
-                onEachFeature: (feature, layer) => {
-                    const id = feature.properties.site_id;
-                    if (id) {
-                        polygonsDict[id] = layer;
-                        layer.on('click', () => {
-                            if (markersDict[id]) markersDict[id].openPopup();
-                        });
-                    }
-                }
-            });
-            updateVisibility();
-        });
+
+function initCascadingFilters() {
+    // Les listes doivent se mettre à jour à chaque changement de statut/surface
+    
+    // On appelle la mise à jour pour le remplissage initial
+    updateFilterOptions();
+
+    // Écouteurs pour les changements
+    selEpci.addEventListener('change', updateFilterOptions);
+    selCommune.addEventListener('change', updateFilterOptions);
+    selFriche.addEventListener('change', updateMap);
 }
 
-/* 7. FILTRES INTELLIGENTS
-   ------------------------------------------------------------------------- */
-function updateVisibility() {
-    const zoom = map.getZoom();
-    const showPolygons = zoom >= ZOOM_THRESHOLD;
 
-    // 1. Récupération des valeurs
-    // Checkboxes (Statut)
-    const checkedStatuts = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+function updateFilterOptions() {
+    // 1. On récupère le sous-ensemble de données après filtrage (Statut/Surface)
+    const baseData = getFilteredData();
     
-    // Selects
-    const valEpci = document.getElementById('filter-epci').value;
-    const valCommune = document.getElementById('filter-commune').value;
-    const valFriche = document.getElementById('filter-friche').value; // ID SITE ou NOM
+    // 2. Mise à jour des EPCI (parmi les données restantes)
+    populateSelect(selEpci, baseData, 'epci_nom');
+
+    // 3. Mise à jour des Communes (basée sur EPCI sélectionné + baseData)
+    const selectedEpci = selEpci.value;
+    let filteredCommunes = baseData;
+    if (selectedEpci) {
+        filteredCommunes = filteredCommunes.filter(d => d.epci_nom === selectedEpci);
+    }
+    populateSelect(selCommune, filteredCommunes, 'comm_nom');
     
-    // Surface
-    const surfMin = parseFloat(document.getElementById('surface-min').value) || 0;
-    const surfMax = parseFloat(document.getElementById('surface-max').value) || Infinity;
+    // 4. Mise à jour des Friches (basée sur EPCI/Commune sélectionnés + baseData)
+    const selectedCommune = selCommune.value;
+    let filteredFriches = filteredCommunes; // On part de la liste des communes déjà filtrées
+    if (selectedCommune) {
+        filteredFriches = filteredFriches.filter(d => d.comm_nom === selectedCommune);
+    }
+    populateSelect(selFriche, filteredFriches, 'site_nom');
+    
+    // Une fois les listes mises à jour, on filtre la carte
+    updateMap();
+}
+
+
+function populateSelect(selectElement, dataList, key) {
+    // On garde l'option "Tous..."
+    const defaultOptionValue = selectElement.options[0].value;
+    const currentSelectedValue = selectElement.value; // On garde la valeur choisie si elle existe
+    
+    selectElement.innerHTML = '';
+    
+    const defaultOption = document.createElement('option');
+    defaultOption.value = defaultOptionValue;
+
+    // Définition des textes personnalisés pour l'option par défaut
+    let defaultText = ''; 
+    if (key === 'epci_nom') {
+        defaultText = '- Tous les EPCI -';
+    } else if (key === 'comm_nom') {
+        defaultText = '- Toutes les communes -';
+    } else if (key === 'site_nom') {
+        defaultText = '- Toutes les friches -';
+    } else {
+        // Fallback si la clé n'est pas reconnue
+        defaultText = `Toutes les ${key.split('_')[0]}s`; 
+    }
+    
+    defaultOption.textContent = defaultText;
+    selectElement.appendChild(defaultOption);
+
+    const values = [...new Set(dataList.map(d => d[key]))].filter(Boolean).sort();
+    
+    values.forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = val;
+        selectElement.appendChild(opt);
+    });
+
+    // Réappliquer la valeur sélectionnée si elle est encore dans la liste
+    if (currentSelectedValue && selectElement.querySelector(`option[value="${currentSelectedValue}"]`)) {
+        selectElement.value = currentSelectedValue;
+    } else {
+        // Sinon, on sélectionne l'option par défaut
+        selectElement.value = defaultOptionValue;
+    }
+}
+
+
+/* ------------------------------------------------------------------------- */
+/* 6. Moteur de Filtrage (Markers + Polygones)                              */
+/* ------------------------------------------------------------------------- */
+
+function initFilterListeners() {
+    // Les changements de Statut ou Surface mettent à jour les listes ET la carte
+    document.querySelectorAll('fieldset input, #surface-min, #surface-max').forEach(input => {
+        input.addEventListener('change', updateFilterOptions);
+        if(input.type === 'number') {
+            input.addEventListener('input', updateFilterOptions);
+        }
+    });
+}
+
+map.on('zoomend', updateMap);
+
+function updateMap() {
+    const valEpci = selEpci.value;
+    const valCommune = selCommune.value;
+    const valFriche = selFriche.value;
+    
+    // On utilise la fonction getFilteredData pour la base du tri
+    const baseFilteredData = getFilteredData(); 
+    
+    const currentZoom = map.getZoom();
+    const showPolygons = currentZoom >= ZOOM_THRESHOLD;
 
     polygonsLayerGroup.clearLayers();
 
     markers.forEach(item => {
         const d = item.data;
-        let visible = true;
+        let visible = false;
 
-        // --- Logique de filtrage ---
-        
-        // 1. Statut
-        if (!checkedStatuts.includes(d.site_statut)) visible = false;
+        // On vérifie d'abord si la donnée passe les filtres Statut et Surface
+        const isBaseVisible = baseFilteredData.some(b => b === d);
 
-        // 2. Localisation
-        if (visible && valEpci && d.epci_nom !== valEpci) visible = false;
-        if (visible && valCommune && d.comm_nom !== valCommune) visible = false;
-
-        // 3. Friche spécifique
-        if (visible && valFriche && d.site_nom !== valFriche) visible = false;
-
-        // 4. Surface
-        const surf = d.unite_fonciere_surface || 0;
-        if (visible) {
-            if (surf < surfMin || surf > surfMax) visible = false;
+        // Si elle passe la base du filtre, on applique la cascade (EPCI, Commune, Friche)
+        if (isBaseVisible) {
+            visible = true;
+            if (valEpci && d.epci_nom !== valEpci) visible = false;
+            if (visible && valCommune && d.comm_nom !== valCommune) visible = false;
+            if (visible && valFriche && d.site_nom !== valFriche) visible = false;
         }
 
-        // --- Application ---
+        // --- Gestion Affichage Marker et Polygone ---
         if (visible) {
             if (!map.hasLayer(item.marker)) item.marker.addTo(map);
             
@@ -214,69 +401,29 @@ function updateVisibility() {
     });
 }
 
-function initFilters(data) {
-    // A. Remplir EPCI
-    const epcis = [...new Set(data.map(d => d.epci_nom))].sort();
-    const selectEpci = document.getElementById('filter-epci');
-    epcis.forEach(e => { if(e) selectEpci.add(new Option(e, e)); });
-
-    const selectCommune = document.getElementById('filter-commune');
-    const selectFriche = document.getElementById('filter-friche');
-
-    // Fonction de mise à jour en cascade
-    const updateLists = () => {
-        const currentEpci = selectEpci.value;
-        const currentCommune = selectCommune.value;
-
-        // Filtrer les données disponibles selon les sélections parentes
-        let filtered = data;
-        if (currentEpci) filtered = filtered.filter(d => d.epci_nom === currentEpci);
-        if (currentCommune) filtered = filtered.filter(d => d.comm_nom === currentCommune);
-
-        // 1. Mettre à jour Communes (si on change EPCI)
-        // On sauvegarde la sélection actuelle si possible
-        const oldCommune = selectCommune.value;
-        selectCommune.innerHTML = '<option value="">- Toutes les communes -</option>';
-        const communes = [...new Set(filtered.map(d => d.comm_nom))].sort();
-        communes.forEach(c => { if(c) selectCommune.add(new Option(c, c)); });
-        // Restaurer si toujours valide
-        if (communes.includes(oldCommune)) selectCommune.value = oldCommune;
-
-        // 2. Mettre à jour Friches
-        selectFriche.innerHTML = '<option value="">- Toutes les friches -</option>';
-        const friches = [...new Set(filtered.map(d => d.site_nom))].sort();
-        friches.forEach(f => { if(f) selectFriche.add(new Option(f, f)); });
-    };
-
-    // Écouteurs
-    selectEpci.addEventListener('change', () => { 
-        selectCommune.value = ""; // Reset commune si on change EPCI
-        updateLists(); 
-        updateVisibility(); 
-    });
-    
-    selectCommune.addEventListener('change', () => { 
-        updateLists(); // Pour affiner la liste des friches
-        updateVisibility(); 
-    });
-
-    selectFriche.addEventListener('change', updateVisibility);
-
-    // Checkboxes & Surface
-    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.addEventListener('change', updateVisibility));
-    document.getElementById('surface-min').addEventListener('input', updateVisibility);
-    document.getElementById('surface-max').addEventListener('input', updateVisibility);
-
-    // Premier appel pour remplir Communes/Friches au démarrage
-    updateLists();
-}
-
-/* 8. UI PANEL
-   ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* 7. UI Panneau (pas de changement)                                        */
+/* ------------------------------------------------------------------------- */
 const btnOpen = document.getElementById('toggle-filters');
 const btnClose = document.getElementById('close-filters');
 const panel = document.getElementById('filters-panel');
 
-btnOpen?.addEventListener('click', (e) => { e.stopPropagation(); panel.classList.add('open'); });
-btnClose?.addEventListener('click', () => panel.classList.remove('open'));
-document.addEventListener('click', (e) => { if (panel && !panel.contains(e.target)) panel.classList.remove('open'); });
+if (btnOpen && panel) {
+    btnOpen.addEventListener('click', (e) => {
+        e.stopPropagation();
+        panel.classList.add('open');
+    });
+}
+if (btnClose && panel) {
+    btnClose.addEventListener('click', () => {
+        panel.classList.remove('open');
+    });
+}
+map.on('click', () => {
+    panel.classList.remove('open');
+});
+
+
+
+
+

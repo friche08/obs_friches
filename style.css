@@ -1,154 +1,139 @@
-/* =========================================================================
-   STYLES GÉNÉRAUX
-   ========================================================================= */
+/* Base */
 body {
-    margin: 0;
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background-color: #f8f9fa;
-    color: #333;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4; /* Pour voir les bords de la carte */
 }
 
 .header-container {
-    padding: 15px;
-    background: #fff;
-    border-bottom: 1px solid #dee2e6;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  padding: 10px;
+  max-width: 90%;
+  margin: 0 auto;
 }
 
 h1 {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 700;
+  margin: 0 0 10px 0;
+  font-size: 1.5rem;
 }
 
+/* Bouton filtres */
+#toggle-filters {
+  padding: 8px 12px;
+  font-size: 1rem;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Carte : 90% de largeur pour le scroll mobile */
 #map {
-    width: 100%;
-    height: calc(100vh - 70px);
-    z-index: 1;
+  width: 90%;
+  height: 80vh;
+  margin: 0 auto; /* Centré horizontalement */
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  /* Important pour le tactile : */
+  touch-action: pan-y; 
 }
 
-/* =========================================================================
-   POPUP DESIGN
-   ========================================================================= */
-.leaflet-popup-content-wrapper {
-    border-radius: 8px;
-    padding: 0;
-    overflow: hidden;
-}
-
-.leaflet-popup-content {
-    width: 300px !important;
-    margin: 0 !important;
-    line-height: 1.4;
-}
-
-.popup-container { padding: 12px; }
-.popup-header { padding-bottom: 5px; }
-.popup-title { font-weight: bold; font-size: 1.1rem; }
-.popup-subtitle { font-style: italic; color: #666; font-size: 0.9rem; }
-.popup-separator { border: 0; border-top: 1px solid #eee; margin: 8px 0; }
-.img-container { width: 100%; margin-bottom: 10px; }
-.popup-img { width: 100%; height: auto; border-radius: 4px; display: block; }
-.img-caption { font-size: 0.75rem; color: #999; margin-top: 4px; font-style: italic; text-align: right; }
-.popup-details p { margin: 4px 0; font-size: 0.9rem; }
-
-/* =========================================================================
-   PANNEAU DE FILTRES
-   ========================================================================= */
+/* PANNEAU FILTRES — CÔTÉ DROIT */
 #filters-panel {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 320px;
-    max-width: 85%;
-    height: 100%;
-    background: #fff;
-    z-index: 3000;
-    box-shadow: -2px 0 10px rgba(0,0,0,0.2);
-    transform: translateX(100%);
-    transition: transform 0.3s ease-in-out;
-    padding: 20px;
-    box-sizing: border-box;
-    overflow-y: auto;
+  position: fixed;
+  top: 0;
+  right: 0; /* Collé à droite */
+  left: auto; /* On annule le left */
+
+  width: 300px;
+  max-width: 85%;
+  height: 100%;
+
+  background: #fff;
+  border-left: 1px solid #ccc; /* Bordure à gauche maintenant */
+  box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+
+  padding: 15px;
+  box-sizing: border-box;
+  overflow-y: auto;
+
+  /* Caché vers la droite */
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  z-index: 2000;
 }
 
-#filters-panel.open { transform: translateX(0); }
+#filters-panel.open {
+  transform: translateX(0);
+}
 
 .panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
-.panel-header h2 { margin: 0; font-size: 1.2rem; }
+.panel-header h2 { margin: 0; }
 #close-filters {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
 }
 
-/* Groupes de filtres */
-.filter-group {
-    margin-bottom: 20px;
-    border: none;
-    padding: 0;
-    margin-inline: 0;
+/* Styles filtres */
+.filter-group { margin-bottom: 15px; }
+.filter-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem;}
+.filter-group select, .filter-group input[type="number"] {
+  width: 100%; padding: 8px; box-sizing: border-box;
+  border: 1px solid #ddd; border-radius: 4px;
+}
+.surface-inputs { display: flex; gap: 5px; }
+fieldset.filter-group { border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: #fafafa;}
+fieldset label { font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 8px;}
+
+/* CSS pour les pictos SVG (optionnel car géré par le SVG lui-même) */
+.picto {
+  background: transparent;
+  border: none;
 }
 
-/* Fieldset specifique pour les statuts */
-fieldset.filter-group {
-    border: 1px solid #eee;
-    padding: 10px;
+/* 1. On force la largeur du contenu du popup Leaflet */
+.leaflet-popup-content {
+    /* La largeur visible sera de 300px */
+    width: 300px !important; 
+    
+    /* Optionnel : supprimer les marges par défaut de Leaflet pour gagner de la place */
+    /* margin: 10px !important; */
+}
+
+/* 2. Style de l'image */
+.popup-img {
+    width: 100%;       /* Prend toute la largeur disponible (300px) */
+    height: auto;      /* Garde les proportions */
+    display: block;    /* Évite les petits espaces blancs sous l'image */
     border-radius: 4px;
-}
-legend {
-    font-weight: bold;
-    font-size: 0.9rem;
-    padding: 0 5px;
-}
-
-.filter-group label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 5px;
-    font-size: 0.9rem;
-}
-
-/* Checkboxes labels */
-fieldset.filter-group label {
-    font-weight: normal;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
     margin-bottom: 8px;
+    
+    /* Astuce : si l'image fait 600px réels, width:100% la forcera à 300px 
+       dans ce conteneur -> Effet Retina réussi */
 }
 
-select, input[type="number"] {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box; /* Important pour ne pas dépasser */
+/* 3. Conteneur de l'image (pour gérer l'erreur de chargement proprement) */
+.img-container {
+    min-height: 0; /* Évite des bugs de hauteur sur certains navigateurs */
 }
 
-/* Surface inputs sur une ligne */
-.surface-inputs {
-    display: flex;
-    gap: 10px;
-}
-.surface-inputs input {
-    width: 50%;
+/* 4. Gestion du Scroll (Ascenseur) */
+.leaflet-popup-content-wrapper {
+    /* Si le contenu est très long, on peut limiter la hauteur globale du popup */
+    max-height: 80vh; /* 80% de la hauteur de l'écran */
+    overflow-y: auto; /* Affiche l'ascenseur si nécessaire */
 }
 
-/* Marqueurs carte */
-.marker-pin {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    border: 2px solid #fff;
-    box-shadow: 0 0 4px rgba(0,0,0,0.4);
+/* Petit raffinement pour le texte sous l'image */
+.popup-content-text {
+    font-size: 0.9rem;
+    line-height: 1.4;
 }
