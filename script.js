@@ -42,10 +42,11 @@ Papa.parse('data.csv', {
         allData = results.data;
         addMarkers(allData);
         loadGeoJsonData();
-        loadArdennesOutline(); // Limites du département
+        loadArdennesOutline(); 
         initCascadingFilters();
         initFilterListeners(); 
-        updateMap(); 
+        // Premier rendu sans zoom automatique pour garder la vue d'ensemble au départ
+        updateMap(false); 
     }
 });
 
@@ -68,7 +69,7 @@ function loadGeoJsonData() {
                     }
                 }
             });
-            updateMap();
+            updateMap(false);
         })
         .catch(err => console.error("Erreur GeoJSON Friches :", err));
 }
@@ -77,11 +78,9 @@ function loadArdennesOutline() {
     fetch('ardennes.geojson')
         .then(response => response.json())
         .then(geojson => {
-            // Contour blanc dessous (5px)
             L.geoJSON(geojson, {
                 style: { color: '#ffffff', weight: 5, opacity: 1, fillOpacity: 0, interactive: false }
             }).addTo(ardennesLayerGroup);
-            // Contour violet dessus (2px)
             L.geoJSON(geojson, {
                 style: { color: '#422d58', weight: 2, opacity: 1, fillOpacity: 0, interactive: false }
             }).addTo(ardennesLayerGroup);
@@ -110,28 +109,26 @@ function initCascadingFilters() {
     updateFilterOptions();
     selEpci.addEventListener('change', updateFilterOptions);
     selCommune.addEventListener('change', updateFilterOptions);
-    selFriche.addEventListener('change', updateMap);
+    selFriche.addEventListener('change', () => updateMap(true));
 }
 
 function updateFilterOptions() {
     const baseData = getFilteredData();
     
-    // 1. Remplir EPCI
     populateSelect(selEpci, baseData, 'epci_nom', '- Tous les EPCI -');
 
-    // 2. Remplir Communes basées sur EPCI
     const selectedEpci = selEpci.value;
     let filteredCommunes = baseData;
     if (selectedEpci) filteredCommunes = filteredCommunes.filter(d => d.epci_nom === selectedEpci);
     populateSelect(selCommune, filteredCommunes, 'comm_nom', '- Toutes les communes -');
     
-    // 3. Remplir Friches basées sur Commune
     const selectedCommune = selCommune.value;
     let filteredFriches = filteredCommunes; 
     if (selectedCommune) filteredFriches = filteredFriches.filter(d => d.comm_nom === selectedCommune);
     populateSelect(selFriche, filteredFriches, 'site_nom', '- Toutes les friches -');
     
-    updateMap();
+    // On passe "true" pour déclencher le zoom car c'est une action de filtre
+    updateMap(true);
 }
 
 function populateSelect(selectElement, dataList, key, defaultText) {
@@ -159,11 +156,11 @@ function initFilterListeners() {
 }
 
 /* ------------------------------------------------------------------------- */
-/* 5. Moteur de rendu de la Carte                                            */
+/* 5. Moteur de rendu et Zoom Automatique                                    */
 /* ------------------------------------------------------------------------- */
-map.on('zoomend', updateMap);
+map.on('zoomend', () => updateMap(false));
 
-function updateMap() {
+function updateMap(shouldFitBounds = false) {
     const valEpci = selEpci.value;
     const valCommune = selCommune.value;
     const valFriche = selFriche.value;
@@ -191,6 +188,25 @@ function updateMap() {
             if (map.hasLayer(item.marker)) map.removeLayer(item.marker);
         }
     });
+
+    // Zoom automatique si demandé (changement de filtre)
+    if (shouldFitBounds) {
+        fitMapToVisibleMarkers();
+    }
+}
+
+function fitMapToVisibleMarkers() {
+    const visibleCoords = markers
+        .filter(item => map.hasLayer(item.marker))
+        .map(item => item.marker.getLatLng());
+
+    if (visibleCoords.length > 0) {
+        const markerBounds = L.latLngBounds(visibleCoords);
+        map.fitBounds(markerBounds, {
+            padding: [40, 40],
+            maxZoom: 15
+        });
+    }
 }
 
 /* ------------------------------------------------------------------------- */
@@ -240,7 +256,6 @@ function addMarkers(rows) {
             riseOnHover: true
         });
 
-        // Contenu du Popup (image + détails)
         const imagePath = `photos/${row.site_id}.webp`;
         const popupContent = `
             <div class="popup-header"><h3>${row.site_nom || 'Friche'}</h3><div>${row.comm_nom || ''}</div></div>
