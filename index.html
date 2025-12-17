@@ -23,6 +23,30 @@
       <button id="close-filters">✕</button>
     </div>
 
+    <fieldset class="filter-group">
+      <legend>Statut de la friche</legend>
+      <label>
+        <input type="checkbox" value="friche potentielle"> Friche potentielle
+      </label>
+      <label>
+        <input type="checkbox" value="friche sans projet" checked> Friche sans projet
+      </label>
+      <label>
+        <input type="checkbox" value="friche avec projet" checked> Friche avec projet
+      </label>
+      <label>
+        <input type="checkbox" value="friche reconvertie"> Friche reconvertie
+      </label>
+    </fieldset>
+
+    <div class="filter-group">
+      <label>Surface (m²)</label>
+      <div class="surface-inputs">
+        <input type="number" id="surface-min" placeholder="Min">
+        <input type="number" id="surface-max" placeholder="Max">
+      </div>
+    </div>
+
     <div class="filter-group">
       <label for="filter-epci">EPCI</label>
       <select id="filter-epci">
@@ -44,38 +68,6 @@
       </select>
     </div>
 
-    <fieldset class="filter-group">
-      <legend>Statut de la friche</legend>
-
-      <label>
-        <input type="checkbox" value="friche potentielle">
-        Friche potentielle
-      </label>
-
-      <label>
-        <input type="checkbox" value="friche sans projet" checked>
-        Friche sans projet
-      </label>
-
-      <label>
-        <input type="checkbox" value="friche avec projet" checked>
-        Friche avec projet
-      </label>
-
-      <label>
-        <input type="checkbox" value="friche reconvertie">
-        Friche reconvertie
-      </label>
-    </fieldset>
-
-    <div class="filter-group">
-      <label>Surface (m²)</label>
-      <div class="surface-inputs">
-        <input type="number" id="surface-min" placeholder="Min">
-        <input type="number" id="surface-max" placeholder="Max">
-      </div>
-    </div>
-
   </aside>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -84,4 +76,3 @@
 
 </body>
 </html>
-
