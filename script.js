@@ -45,7 +45,6 @@ Papa.parse('data.csv', {
         loadArdennesOutline(); 
         initCascadingFilters();
         initFilterListeners(); 
-        // Premier rendu sans zoom automatique pour garder la vue d'ensemble au départ
         updateMap(false); 
     }
 });
@@ -114,27 +113,21 @@ function initCascadingFilters() {
 
 function updateFilterOptions() {
     const baseData = getFilteredData();
-    
     populateSelect(selEpci, baseData, 'epci_nom', '- Tous les EPCI -');
-
     const selectedEpci = selEpci.value;
     let filteredCommunes = baseData;
     if (selectedEpci) filteredCommunes = filteredCommunes.filter(d => d.epci_nom === selectedEpci);
     populateSelect(selCommune, filteredCommunes, 'comm_nom', '- Toutes les communes -');
-    
     const selectedCommune = selCommune.value;
     let filteredFriches = filteredCommunes; 
     if (selectedCommune) filteredFriches = filteredFriches.filter(d => d.comm_nom === selectedCommune);
     populateSelect(selFriche, filteredFriches, 'site_nom', '- Toutes les friches -');
-    
-    // On passe "true" pour déclencher le zoom car c'est une action de filtre
     updateMap(true);
 }
 
 function populateSelect(selectElement, dataList, key, defaultText) {
     const currentVal = selectElement.value;
     selectElement.innerHTML = `<option value="">${defaultText}</option>`;
-
     const values = [...new Set(dataList.map(d => d[key]))].filter(Boolean).sort();
     values.forEach(val => {
         const opt = document.createElement('option');
@@ -142,7 +135,6 @@ function populateSelect(selectElement, dataList, key, defaultText) {
         opt.textContent = val;
         selectElement.appendChild(opt);
     });
-
     if ([...selectElement.options].some(o => o.value === currentVal)) {
         selectElement.value = currentVal;
     }
@@ -172,13 +164,11 @@ function updateMap(shouldFitBounds = false) {
     markers.forEach(item => {
         const d = item.data;
         let visible = baseFilteredData.includes(d);
-
         if (visible) {
             if (valEpci && d.epci_nom !== valEpci) visible = false;
             if (visible && valCommune && d.comm_nom !== valCommune) visible = false;
             if (visible && valFriche && d.site_nom !== valFriche) visible = false;
         }
-
         if (visible) {
             if (!map.hasLayer(item.marker)) item.marker.addTo(map);
             if (showPolygons && d.site_id && polygonsDict[d.site_id]) {
@@ -189,28 +179,21 @@ function updateMap(shouldFitBounds = false) {
         }
     });
 
-    // Zoom automatique si demandé (changement de filtre)
-    if (shouldFitBounds) {
-        fitMapToVisibleMarkers();
-    }
+    if (shouldFitBounds) fitMapToVisibleMarkers();
 }
 
 function fitMapToVisibleMarkers() {
     const visibleCoords = markers
         .filter(item => map.hasLayer(item.marker))
         .map(item => item.marker.getLatLng());
-
     if (visibleCoords.length > 0) {
         const markerBounds = L.latLngBounds(visibleCoords);
-        map.fitBounds(markerBounds, {
-            padding: [40, 40],
-            maxZoom: 15
-        });
+        map.fitBounds(markerBounds, { padding: [40, 40], maxZoom: 15 });
     }
 }
 
 /* ------------------------------------------------------------------------- */
-/* 6. Fonctions SVG et Marqueurs                                             */
+/* 6. Fonctions SVG et Marqueurs (Popup modifié)                             */
 /* ------------------------------------------------------------------------- */
 function getColorForStatus(status) {
     const colors = {
@@ -225,16 +208,7 @@ function getColorForStatus(status) {
 function createSvgPicto(pictocol) {
     return `<svg width="19.2" height="19.2" version="1.1" xmlns="http://www.w3.org/2000/svg">
       <rect x="3.6" y="3.6" width="12" height="12" rx="3" fill="${pictocol}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round">
-        <animate attributeName="x" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/>
-        <animate attributeName="y" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/>
-        <animate attributeName="width" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/>
-        <animate attributeName="height" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/>
-        <animate attributeName="stroke-width" dur="0.4s" begin="mouseover" from="1.6" to="3.2" fill="freeze"/>
-        <animate attributeName="x" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/>
-        <animate attributeName="y" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/>
-        <animate attributeName="width" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/>
-        <animate attributeName="height" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/>
-        <animate attributeName="stroke-width" dur="0.4s" begin="mouseout" from="3.2" to="1.6" fill="freeze"/>
+        <animate attributeName="x" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/><animate attributeName="y" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/><animate attributeName="width" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/><animate attributeName="height" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/><animate attributeName="stroke-width" dur="0.4s" begin="mouseover" from="1.6" to="3.2" fill="freeze"/><animate attributeName="x" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/><animate attributeName="y" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/><animate attributeName="width" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/><animate attributeName="height" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/><animate attributeName="stroke-width" dur="0.4s" begin="mouseout" from="3.2" to="1.6" fill="freeze"/>
       </rect></svg>`;
 }
 
@@ -256,19 +230,44 @@ function addMarkers(rows) {
             riseOnHover: true
         });
 
+        // 1. Traitement de la Pollution (enlever le mot "pollution")
+        let rawPollution = row.sol_pollution_existe || 'Non renseignée';
+        let valPollution = rawPollution.replace(/pollution/gi, '').trim();
+        valPollution = valPollution.charAt(0).toUpperCase() + valPollution.slice(1);
+
+        // 2. Traitement des Propriétaires (pluralité et anonymisation)
+        let rawProprio = row.proprio_nom ? String(row.proprio_nom) : '';
+        let labelProprio = 'Propriétaire';
+        let valProprio = 'Non renseigné';
+        if (rawProprio) {
+            const list = rawProprio.split('|').map(p => p.trim() === '_X_' ? '(anonymisé)' : p.trim());
+            if (list.length > 1) labelProprio = 'Propriétaires';
+            valProprio = list.join(', ');
+        }
+
+        // 3. Construction du Popup
         const imagePath = `photos/${row.site_id}.webp`;
+        const altText = `Photo ${row.site_nom} à ${row.comm_nom}`;
+        const surf = row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue';
+
         const popupContent = `
-            <div class="popup-header"><h3>${row.site_nom || 'Friche'}</h3><div>${row.comm_nom || ''}</div></div>
-            <hr class="popup-separator">
-            <div class="img-container">
-                <img src="${imagePath}" class="popup-img" onerror="this.parentElement.style.display='none'"/>
-            </div>
-            <div class="popup-details">
-                <div><strong>Statut :</strong> ${row.site_statut}</div>
-                <div><strong>Surface :</strong> ${row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue'}</div>
+            <div style="font-family: sans-serif; line-height: 1.4;">
+                <div style="font-weight: bold; font-size: 1.2em;">${row.site_nom || 'Friche'}</div>
+                <div style="font-style: italic; color: #555; margin-bottom: 5px;">${row.comm_nom || ''}</div>
+                <hr style="border: 0; border-top: 1px solid #ccc; margin: 8px 0;">
+                <div style="text-align: center;">
+                    <img src="${imagePath}" style="max-width: 100%; border-radius: 4px;" 
+                         onerror="this.style.display='none'">
+                </div>
+                <div style="margin-top: 8px;">
+                    <div><strong>Statut :</strong> ${row.site_statut}</div>
+                    <div><strong>Surface :</strong> ${surf}</div>
+                    <div><strong>Pollution :</strong> ${valPollution}</div>
+                    <div><strong>${labelProprio} :</strong> ${valProprio}</div>
+                </div>
             </div>`;
 
-        marker.bindPopup(popupContent);
+        marker.bindPopup(popupContent, { minWidth: 300 });
         marker.addTo(map);
         markers.push({ marker, data: row });
         if (row.site_id) markersDict[row.site_id] = marker;
