@@ -193,7 +193,7 @@ function fitMapToVisibleMarkers() {
 }
 
 /* ------------------------------------------------------------------------- */
-/* 6. Fonctions SVG et Marqueurs (Popup modifié)                             */
+/* 6. Fonctions SVG et Marqueurs                                             */
 /* ------------------------------------------------------------------------- */
 function getColorForStatus(status) {
     const colors = {
@@ -209,76 +209,4 @@ function createSvgPicto(pictocol) {
     return `<svg width="19.2" height="19.2" version="1.1" xmlns="http://www.w3.org/2000/svg">
       <rect x="3.6" y="3.6" width="12" height="12" rx="3" fill="${pictocol}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round">
         <animate attributeName="x" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/><animate attributeName="y" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/><animate attributeName="width" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/><animate attributeName="height" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/><animate attributeName="stroke-width" dur="0.4s" begin="mouseover" from="1.6" to="3.2" fill="freeze"/><animate attributeName="x" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/><animate attributeName="y" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/><animate attributeName="width" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/><animate attributeName="height" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/><animate attributeName="stroke-width" dur="0.4s" begin="mouseout" from="3.2" to="1.6" fill="freeze"/>
-      </rect></svg>`;
-}
-
-function createPictoIcon(svg) {
-    return L.divIcon({ className: "picto", html: svg, iconSize: [19.2, 19.2], iconAnchor: [9.6, 9.6], popupAnchor: [0, -10] });
-}
-
-function addMarkers(rows) {
-    markers.forEach(m => map.removeLayer(m.marker));
-    markers = [];
-    markersDict = {};
-    rows.forEach(row => {
-        const lat = parseFloat(row.latitude), lon = parseFloat(row.longitude);
-        if (isNaN(lat) || isNaN(lon)) return;
-
-        const marker = L.marker([lat, lon], {
-            icon: createPictoIcon(createSvgPicto(getColorForStatus(row.site_statut))),
-            title: row.site_nom,
-            riseOnHover: true
-        });
-
-        // 1. Traitement de la Pollution (enlever le mot "pollution")
-        let rawPollution = row.sol_pollution_existe || 'Non renseignée';
-        let valPollution = rawPollution.replace(/pollution/gi, '').trim();
-        valPollution = valPollution.charAt(0).toUpperCase() + valPollution.slice(1);
-
-        // 2. Traitement des Propriétaires (pluralité et anonymisation)
-        let rawProprio = row.proprio_nom ? String(row.proprio_nom) : '';
-        let labelProprio = 'Propriétaire';
-        let valProprio = 'Non renseigné';
-        if (rawProprio) {
-            const list = rawProprio.split('|').map(p => p.trim() === '_X_' ? '(anonymisé)' : p.trim());
-            if (list.length > 1) labelProprio = 'Propriétaires';
-            valProprio = list.join(', ');
-        }
-
-        // 3. Construction du Popup
-        const imagePath = `photos/${row.site_id}.webp`;
-        const altText = `Photo ${row.site_nom} à ${row.comm_nom}`;
-        const surf = row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue';
-
-        const popupContent = `
-            <div style="font-family: sans-serif; line-height: 1.4;">
-                <div style="font-weight: bold; font-size: 1.2em;">${row.site_nom || 'Friche'}</div>
-                <div style="font-style: italic; color: #555; margin-bottom: 5px;">${row.comm_nom || ''}</div>
-                <hr style="border: 0; border-top: 1px solid #ccc; margin: 8px 0;">
-                <div style="text-align: center;">
-                    <img src="${imagePath}" style="max-width: 100%; border-radius: 4px;" 
-                         onerror="this.style.display='none'">
-                    <div style="font-size: 0.8em; color: #999; margin-top: 2px;">${altText}</div>
-                </div>
-                <div style="margin-top: 8px;">
-                    <div><strong>Statut :</strong> ${row.site_statut}</div>
-                    <div><strong>Surface :</strong> ${surf}</div>
-                    <div><strong>Pollution :</strong> ${valPollution}</div>
-                    <div><strong>${labelProprio} :</strong> ${valProprio}</div>
-                </div>
-            </div>`;
-
-        marker.bindPopup(popupContent, { minWidth: 300 });
-        marker.addTo(map);
-        markers.push({ marker, data: row });
-        if (row.site_id) markersDict[row.site_id] = marker;
-    });
-}
-
-/* ------------------------------------------------------------------------- */
-/* 7. UI Panneau                                                             */
-/* ------------------------------------------------------------------------- */
-const panel = document.getElementById('filters-panel');
-document.getElementById('toggle-filters')?.addEventListener('click', (e) => { e.stopPropagation(); panel.classList.add('open'); });
-document.getElementById('close-filters')?.addEventListener('click', () => panel.classList.remove('open'));
-map.on('click', () => panel.classList.remove('open'));
+      </
