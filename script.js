@@ -1,115 +1,143 @@
 /* ------------------------------------------------------------------------- */
-/* 1. Initialisation (Mise à jour)                                          */
+/* 1. Initialisation (Mise à jour)                                           */
 /* ------------------------------------------------------------------------- */
-// Définition des bornes : coin sud-ouest, coin nord-est
 const bounds = L.latLngBounds([48, 1], [52, 8]);
 
 const map = L.map('map', {
-    minZoom: 8,      // Zoom minimum
-    maxZoom: 18,     // Zoom maximum
+    minZoom: 8,
+    maxZoom: 18,
     maxBounds: bounds,
-    maxBoundsViscosity: 1.0 // La carte est "collée" aux bords
+    maxBoundsViscosity: 1.0
 }).setView([49.7, 4.7], 9);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors'
+    attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
 /* ------------------------------------------------------------------------- */
-/* 2. Variables Globales                                                    */
+/* 2. Variables Globales                                                     */
 /* ------------------------------------------------------------------------- */
 let allData = [];
-let markers = [];          // Objets { marker, data }
-let markersDict = {};      // Nouveau : { site_id : markerLeaflet } pour lier polygone/popup
+let markers = [];
+let markersDict = {};
 let polygonsDict = {};
 let polygonsLayerGroup = L.layerGroup().addTo(map);
+// Nouveau : Groupe pour les limites du département
+let ardennesLayerGroup = L.layerGroup().addTo(map);
+
 const ZOOM_THRESHOLD = 13;
 
 /* ------------------------------------------------------------------------- */
-/* 3. Chargement des données (CSV puis GeoJSON)                             */
+/* 3. Chargement des données (CSV, GeoJSON friches, GeoJSON Ardennes)        */
 /* ------------------------------------------------------------------------- */
 Papa.parse('data.csv', {
-  download: true,
-  header: true,
-  dynamicTyping: true,
-  skipEmptyLines: true,
+    download: true,
+    header: true,
+    dynamicTyping: true,
+    skipEmptyLines: true,
 
-  complete: function (results) {
-    allData = results.data;
-    
-    // 1. Créer les marqueurs
-    addMarkers(allData);
-    
-    // 2. Initialiser les filtres (Listes déroulantes)
-    initCascadingFilters();
-    
-    // 3. Charger le GeoJSON des contours
-    loadGeoJsonData();
-    
-    // 4. Activer les écouteurs de statut et surface
-    initFilterListeners(); 
+    complete: function (results) {
+        allData = results.data;
+        
+        // 1. Créer les marqueurs
+        addMarkers(allData);
+        
+        // 2. Initialiser les filtres
+        initCascadingFilters();
+        
+        // 3. Charger les contours des friches
+        loadGeoJsonData();
 
-    // 5. Premier rendu
-    updateMap(); 
-  }
+        // 4. Charger les limites du département (Ardennes)
+        loadArdennesOutline();
+        
+        // 5. Activer les écouteurs
+        initFilterListeners(); 
+
+        // 6. Premier rendu
+        updateMap(); 
+    }
 });
 
 function loadGeoJsonData() {
-  fetch('friches.geojson')
-    .then(response => response.json())
-    .then(geojson => {
-      L.geoJSON(geojson, {
-        style: function (feature) {
-          const siteId = feature.properties.site_id;
-          const row = allData.find(d => d.site_id === siteId);
-          const color = row ? getColorForStatus(row.site_statut) : '#3388ff';
-          
-          return {
-            color: color,
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.2
-          };
-        },
-        onEachFeature: function (feature, layer) {
-          const id = feature.properties.site_id;
-          if (id) {
-            polygonsDict[id] = layer;
-            
-            // 🚩 NOUVEAUTÉ 1 : Lier le clic du polygone au popup du marqueur
-            layer.on('click', function(e) {
-                // S'assurer que le marqueur existe et est visible
-                if(markersDict[id]) {
-                    markersDict[id].openPopup();
+    fetch('friches.geojson')
+        .then(response => response.json())
+        .then(geojson => {
+            L.geoJSON(geojson, {
+                style: function (feature) {
+                    const siteId = feature.properties.site_id;
+                    const row = allData.find(d => d.site_id === siteId);
+                    const color = row ? getColorForStatus(row.site_statut) : '#3388ff';
+                    
+                    return {
+                        color: color,
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.2
+                    };
+                },
+                onEachFeature: function (feature, layer) {
+                    const id = feature.properties.site_id;
+                    if (id) {
+                        polygonsDict[id] = layer;
+                        layer.on('click', function(e) {
+                            if(markersDict[id]) {
+                                markersDict[id].openPopup();
+                            }
+                        });
+                    }
                 }
             });
-            
-            // Pas besoin de popup ici, on utilise celui du marqueur
-            // layer.bindPopup(feature.properties.nom || feature.properties.site_nom);
-          }
-        }
-      });
-      updateMap();
-    })
-    .catch(err => console.error("Erreur chargement GeoJSON :", err));
+            updateMap();
+        })
+        .catch(err => console.error("Erreur chargement GeoJSON friches :", err));
+}
+
+// --- AJOUT : Chargement des limites des Ardennes ---
+function loadArdennesOutline() {
+    fetch('ardennes.geojson')
+        .then(response => response.json())
+        .then(geojson => {
+            // 1. Tracé du dessous : blanc large (5px)
+            L.geoJSON(geojson, {
+                style: {
+                    color: '#ffffff',
+                    weight: 5,
+                    opacity: 1,
+                    fillOpacity: 0,
+                    interactive: false // Ne bloque pas le clic
+                }
+            }).addTo(ardennesLayerGroup);
+
+            // 2. Tracé du dessus : violet fin (2px)
+            L.geoJSON(geojson, {
+                style: {
+                    color: '#422d58',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0,
+                    interactive: false // Ne bloque pas le clic
+                }
+            }).addTo(ardennesLayerGroup);
+        })
+        .catch(err => console.error("Erreur chargement Ardennes GeoJSON :", err));
 }
 
 /* ------------------------------------------------------------------------- */
-/* 4. Fonctions SVG et Marqueurs (pas de changement)                        */
+/* 4. Fonctions SVG et Marqueurs                                             */
 /* ------------------------------------------------------------------------- */
-
 function getColorForStatus(status) {
-  const colors = {
-    "friche potentielle": "#aea397",
-    "friche sans projet": "#745b47",
-    "friche avec projet": "#2b7756",
-    "friche reconvertie": "#99c221"
-  };
-  return colors[status] || "#777777";
+    const colors = {
+        "friche potentielle": "#aea397",
+        "friche sans projet": "#745b47",
+        "friche avec projet": "#2b7756",
+        "friche reconvertie": "#99c221"
+    };
+    return colors[status] || "#777777";
 }
 
 function createSvgPicto(pictocol) {
-  return `
+    return `
 <svg width="19.2" height="19.2" version="1.1" xmlns="http://www.w3.org/2000/svg">
   <rect x="3.6" y="3.6" width="12" height="12" rx="3"
        fill="${pictocol}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round">
@@ -128,117 +156,95 @@ function createSvgPicto(pictocol) {
 }
 
 function createPictoIcon(svg) {
-  return L.divIcon({
-    className: "picto",
-    html: svg,
-    iconSize: [19.2, 19.2],
-    iconAnchor: [9.6, 9.6],
-    popupAnchor: [0, -10]
-  });
+    return L.divIcon({
+        className: "picto",
+        html: svg,
+        iconSize: [19.2, 19.2],
+        iconAnchor: [9.6, 9.6],
+        popupAnchor: [0, -10]
+    });
 }
 
 function addMarkers(rows) {
-  markers.forEach(m => map.removeLayer(m.marker));
-  markers = [];
-  markersDict = {}; // Réinitialisation
+    markers.forEach(m => map.removeLayer(m.marker));
+    markers = [];
+    markersDict = {};
 
-  rows.forEach(row => {
-    const lat = parseFloat(row.latitude);
-    const lon = parseFloat(row.longitude);
+    rows.forEach(row => {
+        const lat = parseFloat(row.latitude);
+        const lon = parseFloat(row.longitude);
 
-    if (isNaN(lat) || isNaN(lon)) return;
+        if (isNaN(lat) || isNaN(lon)) return;
 
-    const pictocol = getColorForStatus(row.site_statut);
-    const svgpicto = createSvgPicto(pictocol);
-    const picto = createPictoIcon(svgpicto);
+        const pictocol = getColorForStatus(row.site_statut);
+        const svgpicto = createSvgPicto(pictocol);
+        const picto = createPictoIcon(svgpicto);
 
-    const marker = L.marker([lat, lon], {
-      icon: picto,
-      title: row.site_nom,
-      riseOnHover: true
-    });
-
-    const surf = row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue';
-
-    // --- 1. Gestion de l'image ---
-    const imagePath = `photos/${row.site_id}.webp`;
-    // On nettoie les guillemets pour l'attribut HTML alt
-    const safeSite = (row.site_nom || '').replace(/"/g, ''); 
-    const safeComm = (row.comm_nom || '').replace(/"/g, '');
-    const altText = `Photo ${safeSite} à ${safeComm}`;
-
-    // --- 2. Gestion des Propriétaires ---
-    let rawProprio = row.proprio_nom ? String(row.proprio_nom) : '';
-    let labelProprio = 'Propriétaire';
-    let valProprio = 'Non renseigné';
-
-    if (rawProprio) {
-        // Découpage par '|' et traitement de l'anonymisation
-        const propriosList = rawProprio.split('|').map(p => {
-            p = p.trim();
-            return p === '_X_' ? '(anonymisé)' : p;
+        const marker = L.marker([lat, lon], {
+            icon: picto,
+            title: row.site_nom,
+            riseOnHover: true
         });
+
+        const imagePath = `photos/${row.site_id}.webp`;
+        const safeSite = (row.site_nom || '').replace(/"/g, ''); 
+        const safeComm = (row.comm_nom || '').replace(/"/g, '');
+        const altText = `Photo ${safeSite} à ${safeComm}`;
+
+        let rawProprio = row.proprio_nom ? String(row.proprio_nom) : '';
+        let labelProprio = 'Propriétaire';
+        let valProprio = 'Non renseigné';
+
+        if (rawProprio) {
+            const propriosList = rawProprio.split('|').map(p => {
+                p = p.trim();
+                return p === '_X_' ? '(anonymisé)' : p;
+            });
+            if (propriosList.length > 1) labelProprio = 'Propriétaires';
+            valProprio = propriosList.join(', ');
+        }
+
+        let rawPollution = row.sol_pollution_existe || 'Non renseignée';
+        let valPollution = rawPollution.replace(/pollution/gi, '').trim(); 
+        valPollution = valPollution.charAt(0).toUpperCase() + valPollution.slice(1);
+
+        const popupContent = `
+            <div class="popup-header">
+                <h3 class="popup-title">${row.site_nom || 'Friche'}</h3>
+                <div class="popup-subtitle">${row.comm_nom || ''}</div>
+            </div>
+            <hr class="popup-separator">
+            <div class="img-container">
+                <img src="${imagePath}" 
+                     alt="${altText}" 
+                     class="popup-img"
+                     onerror="this.parentElement.style.display='none'"/>
+                <div class="img-caption">${altText}</div>
+            </div>
+            <div class="popup-details">
+                <div><strong>Statut :</strong> ${row.site_statut}</div>
+                <div><strong>Surface :</strong> ${row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue'}</div>
+                <div><strong>Pollution :</strong> ${valPollution}</div>
+                <div><strong>${labelProprio} :</strong> ${valProprio}</div>
+            </div>`;
+
+        marker.bindPopup(popupContent);
+        marker.addTo(map);
         
-        // Pluriel ou singulier
-        if (propriosList.length > 1) labelProprio = 'Propriétaires';
-        valProprio = propriosList.join(', ');
-    }
-
-    // --- 3. Gestion de la Pollution ---
-    // On enlève le mot "pollution" (insensible à la casse) s'il est présent
-    let rawPollution = row.sol_pollution_existe || 'Non renseignée';
-    // Ex: "Pollution suspectée" devient "suspectée"
-    let valPollution = rawPollution.replace(/pollution/gi, '').trim(); 
-    // On met une majuscule au début par propreté
-    valPollution = valPollution.charAt(0).toUpperCase() + valPollution.slice(1);
-
-    // --- 4. Construction du HTML ---
-    const popupContent = `
-        <div class="popup-header">
-            <h3 class="popup-title">${row.site_nom || 'Friche'}</h3>
-            <div class="popup-subtitle">${row.comm_nom || ''}</div>
-        </div>
-        
-        <hr class="popup-separator">
-        
-        <div class="img-container">
-            <img src="${imagePath}" 
-                 alt="${altText}" 
-                 class="popup-img"
-                 onerror="this.parentElement.style.display='none'"/>
-            <div class="img-caption">${altText}</div>
-        </div>
-
-        <div class="popup-details">
-            <div><strong>Statut :</strong> ${row.site_statut}</div>
-            <div><strong>Surface :</strong> ${row.unite_fonciere_surface ? row.unite_fonciere_surface + ' m²' : 'Non connue'}</div>
-            <div><strong>Pollution :</strong> ${valPollution}</div>
-            <div><strong>${labelProprio} :</strong> ${valProprio}</div>
-        </div>
-    `;
-
-    marker.bindPopup(popupContent);
-    marker.addTo(map);
-    
-    markers.push({
-      marker: marker,
-      data: row
+        markers.push({ marker: marker, data: row });
+        if (row.site_id) {
+            markersDict[row.site_id] = marker;
+        }
     });
-    // Stockage du marqueur pour le lien avec le polygone (si site_id existe)
-    if (row.site_id) {
-        markersDict[row.site_id] = marker;
-    }
-  });
 }
 
 /* ------------------------------------------------------------------------- */
-/* 5. Filtres Hiérarchiques (Cascade Intelligente)                          */
+/* 5. Filtres Hiérarchiques (Cascade Intelligente)                           */
 /* ------------------------------------------------------------------------- */
 const selEpci = document.getElementById('filter-epci');
 const selCommune = document.getElementById('filter-commune');
 const selFriche = document.getElementById('filter-friche');
 
-// 🚩 NOUVEAUTÉ 2 : Fonction utilitaire pour récupérer les données après filtre statut/surface
 function getFilteredData() {
     const surfMin = parseFloat(document.getElementById('surface-min').value) || 0;
     const surfMax = parseFloat(document.getElementById('surface-max').value) || Infinity;
@@ -246,39 +252,24 @@ function getFilteredData() {
     const allowedStatuses = Array.from(checkedBoxes).map(cb => cb.value);
 
     return allData.filter(d => {
-        // Filtre Statut
         if (!allowedStatuses.includes(d.site_statut)) return false;
-        
-        // Filtre Surface
         const s = d.unite_fonciere_surface || 0;
         if (s < surfMin || s > surfMax) return false;
-
         return true;
     });
 }
 
-
 function initCascadingFilters() {
-    // Les listes doivent se mettre à jour à chaque changement de statut/surface
-    
-    // On appelle la mise à jour pour le remplissage initial
     updateFilterOptions();
-
-    // Écouteurs pour les changements
     selEpci.addEventListener('change', updateFilterOptions);
     selCommune.addEventListener('change', updateFilterOptions);
     selFriche.addEventListener('change', updateMap);
 }
 
-
 function updateFilterOptions() {
-    // 1. On récupère le sous-ensemble de données après filtrage (Statut/Surface)
     const baseData = getFilteredData();
-    
-    // 2. Mise à jour des EPCI (parmi les données restantes)
     populateSelect(selEpci, baseData, 'epci_nom');
 
-    // 3. Mise à jour des Communes (basée sur EPCI sélectionné + baseData)
     const selectedEpci = selEpci.value;
     let filteredCommunes = baseData;
     if (selectedEpci) {
@@ -286,41 +277,29 @@ function updateFilterOptions() {
     }
     populateSelect(selCommune, filteredCommunes, 'comm_nom');
     
-    // 4. Mise à jour des Friches (basée sur EPCI/Commune sélectionnés + baseData)
     const selectedCommune = selCommune.value;
-    let filteredFriches = filteredCommunes; // On part de la liste des communes déjà filtrées
+    let filteredFriches = filteredCommunes; 
     if (selectedCommune) {
         filteredFriches = filteredFriches.filter(d => d.comm_nom === selectedCommune);
     }
     populateSelect(selFriche, filteredFriches, 'site_nom');
     
-    // Une fois les listes mises à jour, on filtre la carte
     updateMap();
 }
 
-
 function populateSelect(selectElement, dataList, key) {
-    // On garde l'option "Tous..."
     const defaultOptionValue = selectElement.options[0].value;
-    const currentSelectedValue = selectElement.value; // On garde la valeur choisie si elle existe
+    const currentSelectedValue = selectElement.value;
     
     selectElement.innerHTML = '';
-    
     const defaultOption = document.createElement('option');
     defaultOption.value = defaultOptionValue;
 
-    // Définition des textes personnalisés pour l'option par défaut
     let defaultText = ''; 
-    if (key === 'epci_nom') {
-        defaultText = '- Tous les EPCI -';
-    } else if (key === 'comm_nom') {
-        defaultText = '- Toutes les communes -';
-    } else if (key === 'site_nom') {
-        defaultText = '- Toutes les friches -';
-    } else {
-        // Fallback si la clé n'est pas reconnue
-        defaultText = `Toutes les ${key.split('_')[0]}s`; 
-    }
+    if (key === 'epci_nom') defaultText = '- Tous les EPCI -';
+    else if (key === 'comm_nom') defaultText = '- Toutes les communes -';
+    else if (key === 'site_nom') defaultText = '- Toutes les friches -';
+    else defaultText = `Toutes les ${key.split('_')[0]}s`; 
     
     defaultOption.textContent = defaultText;
     selectElement.appendChild(defaultOption);
@@ -334,22 +313,17 @@ function populateSelect(selectElement, dataList, key) {
         selectElement.appendChild(opt);
     });
 
-    // Réappliquer la valeur sélectionnée si elle est encore dans la liste
     if (currentSelectedValue && selectElement.querySelector(`option[value="${currentSelectedValue}"]`)) {
         selectElement.value = currentSelectedValue;
     } else {
-        // Sinon, on sélectionne l'option par défaut
         selectElement.value = defaultOptionValue;
     }
 }
 
-
 /* ------------------------------------------------------------------------- */
-/* 6. Moteur de Filtrage (Markers + Polygones)                              */
+/* 6. Moteur de Filtrage (Markers + Polygones)                               */
 /* ------------------------------------------------------------------------- */
-
 function initFilterListeners() {
-    // Les changements de Statut ou Surface mettent à jour les listes ET la carte
     document.querySelectorAll('fieldset input, #surface-min, #surface-max').forEach(input => {
         input.addEventListener('change', updateFilterOptions);
         if(input.type === 'number') {
@@ -364,10 +338,7 @@ function updateMap() {
     const valEpci = selEpci.value;
     const valCommune = selCommune.value;
     const valFriche = selFriche.value;
-    
-    // On utilise la fonction getFilteredData pour la base du tri
     const baseFilteredData = getFilteredData(); 
-    
     const currentZoom = map.getZoom();
     const showPolygons = currentZoom >= ZOOM_THRESHOLD;
 
@@ -376,11 +347,8 @@ function updateMap() {
     markers.forEach(item => {
         const d = item.data;
         let visible = false;
-
-        // On vérifie d'abord si la donnée passe les filtres Statut et Surface
         const isBaseVisible = baseFilteredData.some(b => b === d);
 
-        // Si elle passe la base du filtre, on applique la cascade (EPCI, Commune, Friche)
         if (isBaseVisible) {
             visible = true;
             if (valEpci && d.epci_nom !== valEpci) visible = false;
@@ -388,10 +356,8 @@ function updateMap() {
             if (visible && valFriche && d.site_nom !== valFriche) visible = false;
         }
 
-        // --- Gestion Affichage Marker et Polygone ---
         if (visible) {
             if (!map.hasLayer(item.marker)) item.marker.addTo(map);
-            
             if (showPolygons && d.site_id && polygonsDict[d.site_id]) {
                 polygonsLayerGroup.addLayer(polygonsDict[d.site_id]);
             }
@@ -402,7 +368,7 @@ function updateMap() {
 }
 
 /* ------------------------------------------------------------------------- */
-/* 7. UI Panneau (pas de changement)                                        */
+/* 7. UI Panneau                                                             */
 /* ------------------------------------------------------------------------- */
 const btnOpen = document.getElementById('toggle-filters');
 const btnClose = document.getElementById('close-filters');
@@ -422,8 +388,3 @@ if (btnClose && panel) {
 map.on('click', () => {
     panel.classList.remove('open');
 });
-
-
-
-
-
