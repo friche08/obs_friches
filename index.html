@@ -1,78 +1,115 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-fr-theme>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Observatoire friches Ardennes</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Observatoire friches Ardennes</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/@gouvfr/dsfr/dist/dsfr.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/@gouvfr/dsfr/dist/utility/utility.min.css" />
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
+    <header role="banner" class="fr-header">
+        <div class="fr-header__body">
+            <div class="fr-container">
+                <div class="fr-header__body-row">
+                    <div class="fr-header__brand fr-enlarge-link">
+                        <div class="fr-header__brand-top">
+                            <div class="fr-header__logo">
+                                <p class="fr-logo">République<br>Française</p>
+                            </div>
+                        </div>
+                        <div class="fr-header__service">
+                            <a href="/" title="Accueil - Observatoire des friches des Ardennes">
+                                <p class="fr-header__service-title">Observatoire des friches des Ardennes</p>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="fr-header__tools">
+                        <button class="fr-btn fr-icon-filter-fill fr-btn--icon-left" id="toggle-filters" type="button">
+                            Filtres
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
 
-  <div class="header-container">
-    <h1>Observatoire des friches des Ardennes</h1>
-    <button id="toggle-filters" type="button">☰ Filtres</button>
-  </div>
+    <main role="main" id="content">
+        <div class="fr-container-fluid">
+            <div id="map"></div>
+        </div>
+    </main>
 
-  <div id="map"></div>
+    <aside id="filters-panel" class="fr-sidemenu">
+        <div class="fr-sidemenu__inner">
+            <div class="panel-header fr-mb-2w">
+                <h2 class="fr-h4">Filtres</h2>
+                <button class="fr-btn fr-btn--tertiary-no-outline fr-icon-close-line" id="close-filters" title="Fermer"></button>
+            </div>
 
-  <aside id="filters-panel">
-    <div class="panel-header">
-      <h2>Filtres</h2>
-      <button id="close-filters">✕</button>
-    </div>
+            <fieldset class="fr-fieldset fr-mb-3w" id="status-filters">
+                <legend class="fr-fieldset__legend fr-text--bold">Statut de la friche</legend>
+                <div class="fr-fieldset__content">
+                    <div class="fr-checkbox-group">
+                        <input type="checkbox" id="statut-1" value="friche potentielle">
+                        <label class="fr-label" for="statut-1">Friche potentielle</label>
+                    </div>
+                    <div class="fr-checkbox-group">
+                        <input type="checkbox" id="statut-2" value="friche sans projet" checked>
+                        <label class="fr-label" for="statut-2">Friche sans projet</label>
+                    </div>
+                    <div class="fr-checkbox-group">
+                        <input type="checkbox" id="statut-3" value="friche avec projet" checked>
+                        <label class="fr-label" for="statut-3">Friche avec projet</label>
+                    </div>
+                    <div class="fr-checkbox-group">
+                        <input type="checkbox" id="statut-4" value="friche reconvertie">
+                        <label class="fr-label" for="statut-4">Friche reconvertie</label>
+                    </div>
+                </div>
+            </fieldset>
 
-    <fieldset class="filter-group">
-      <legend>Statut de la friche</legend>
-      <label>
-        <input type="checkbox" value="friche potentielle"> Friche potentielle
-      </label>
-      <label>
-        <input type="checkbox" value="friche sans projet" checked> Friche sans projet
-      </label>
-      <label>
-        <input type="checkbox" value="friche avec projet" checked> Friche avec projet
-      </label>
-      <label>
-        <input type="checkbox" value="friche reconvertie"> Friche reconvertie
-      </label>
-    </fieldset>
+            <div class="fr-input-group fr-mb-3w">
+                <label class="fr-label fr-text--bold">Surface (m²)</label>
+                <div class="surface-inputs">
+                    <input class="fr-input" type="number" id="surface-min" placeholder="Min">
+                    <input class="fr-input" type="number" id="surface-max" placeholder="Max">
+                </div>
+            </div>
 
-    <div class="filter-group">
-      <label>Surface (m²)</label>
-      <div class="surface-inputs">
-        <input type="number" id="surface-min" placeholder="Min">
-        <input type="number" id="surface-max" placeholder="Max">
-      </div>
-    </div>
+            <div class="fr-select-group fr-mb-2w">
+                <label class="fr-label fr-text--bold" for="filter-epci">EPCI</label>
+                <select class="fr-select" id="filter-epci">
+                    <option value="">- Tous les EPCI -</option>
+                </select>
+            </div>
 
-    <div class="filter-group">
-      <label for="filter-epci">EPCI</label>
-      <select id="filter-epci">
-        <option value="">- Tous les EPCI -</option>
-      </select>
-    </div>
+            <div class="fr-select-group fr-mb-2w">
+                <label class="fr-label fr-text--bold" for="filter-commune">Commune</label>
+                <select class="fr-select" id="filter-commune">
+                    <option value="">- Toutes les communes -</option>
+                </select>
+            </div>
 
-    <div class="filter-group">
-      <label for="filter-commune">Commune</label>
-      <select id="filter-commune">
-        <option value="">- Toutes les communes -</option>
-      </select>
-    </div>
+            <div class="fr-select-group fr-mb-2w">
+                <label class="fr-label fr-text--bold" for="filter-friche">Friche</label>
+                <select class="fr-select" id="filter-friche">
+                    <option value="">- Toutes les friches -</option>
+                </select>
+            </div>
+        </div>
+    </aside>
 
-    <div class="filter-group">
-      <label for="filter-friche">Friche</label>
-      <select id="filter-friche">
-        <option value="">- Toutes les friches -</option>
-      </select>
-    </div>
-
-  </aside>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="script.js"></script>
-
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script type="module" src="https://unpkg.com/@gouvfr/dsfr/dist/dsfr.module.min.js"></script>
+    <script nomodule src="https://unpkg.com/@gouvfr/dsfr/dist/dsfr.nomodule.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
