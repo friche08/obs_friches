@@ -28,7 +28,6 @@ body {
   margin: 20px auto; 
   border: 1px solid var(--grey-border);
   z-index: 1;
-  touch-action: pan-y;
 }
 
 /* HEADER */
@@ -76,8 +75,8 @@ body {
 #filters-panel.open { transform: translateX(0); }
 
 .panel-header {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--grey-border);
+  padding: 1.5rem 1.5rem;
+  /* Suppression du trait séparateur ici */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -90,7 +89,7 @@ body {
   color: #000; cursor: pointer; padding: 5px;
 }
 
-.panel-scroll-content { padding: 1.5rem; overflow-y: auto; }
+.panel-scroll-content { padding: 0 1.5rem 1.5rem 1.5rem; overflow-y: auto; }
 
 /* Cadre Statuts */
 .filter-group-statut {
@@ -98,8 +97,15 @@ body {
   padding: 1rem;
   margin-bottom: 1.5rem;
   background-color: #fff;
+  margin-left: 0;
 }
-.filter-group-statut legend { font-weight: 700; font-size: 0.95rem; padding: 0 5px; }
+.filter-group-statut legend { 
+    font-weight: 700; 
+    font-size: 0.95rem; 
+    margin-left: -5px; /* Aligné à gauche avec les autres titres */
+    padding: 0 5px;
+}
+
 .checkbox-list { display: flex; flex-direction: column; gap: 10px; }
 .custom-checkbox { font-size: 0.95rem; display: flex; align-items: center; gap: 10px; cursor: pointer; }
 
