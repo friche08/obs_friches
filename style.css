@@ -1,127 +1,31 @@
-/* 1. POLICES MARIANNE */
-@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Thin.woff2') format('woff2'); font-weight: 100; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-ExtraBold.woff2') format('woff2'); font-weight: 800; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Regular.woff2') format('woff2'); font-weight: 400; }
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Bold.woff2') format('woff2'); font-weight: 700; }
 
-:root {
-  --blue-france: #000091;
-  --text-default: #3a3a3a;
-  --grey-border: #cecece;
-  --grey-background: #f6f6f6;
-  --white: #ffffff;
-}
+:root { --blue-france: #000091; --grey-border: #cecece; --white: #ffffff; }
 
-body {
-  margin: 0;
-  font-family: 'Marianne', Arial, sans-serif;
-  background-color: var(--grey-background);
-  color: var(--text-default);
-}
+body { margin: 0; font-family: 'Marianne', Arial, sans-serif; background: #f6f6f6; }
 
-#map {
-  width: 90%;
-  height: 80vh;
-  margin: 20px auto; 
-  border: 1px solid var(--grey-border);
-  z-index: 1;
-}
+#map { width: 90%; height: 80vh; margin: 20px auto; border: 1px solid var(--grey-border); z-index: 1; }
 
-/* HEADER */
-.custom-header {
-  background: var(--white);
-  padding: 0.75rem 1.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  border-bottom: 1px solid var(--grey-border);
-}
-
+.custom-header { background: var(--white); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--grey-border); }
 .brand-block { display: flex; align-items: center; gap: 1.5rem; }
-.logo-marianne img { height: 70px; width: auto; }
+.logo-marianne { height: 70px; }
 .brand-text { border-left: 1px solid var(--grey-border); padding-left: 1.5rem; }
 .main-title { font-weight: 800; font-size: 1.3rem; margin: 0; color: var(--blue-france); }
-.service-row { display: flex; align-items: center; gap: 1rem; margin-top: 0.2rem; }
-.mention-service { font-weight: 700; font-size: 0.85rem; margin: 0; }
+.service-row { display: flex; align-items: center; gap: 1rem; }
+.dsfr-button { background: var(--blue-france); color: #fff; border: none; padding: 4px 10px; cursor: pointer; font-family: 'Marianne'; }
 
-.dsfr-button {
-  background-color: var(--blue-france);
-  color: var(--white);
-  border: none;
-  padding: 4px 10px;
-  font-family: 'Marianne';
-  font-weight: 500;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-/* PANNEAU FILTRES */
-#filters-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 350px;
-  height: 100%;
-  background: var(--white);
-  box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-  z-index: 2000;
-  transform: translateX(100%);
-  transition: transform 0.3s ease;
-  display: flex;
-  flex-direction: column;
-}
-
+#filters-panel { position: fixed; top: 0; right: 0; width: 350px; height: 100%; background: #fff; z-index: 2000; transform: translateX(100%); transition: 0.3s; display: flex; flex-direction: column; box-shadow: -2px 0 10px rgba(0,0,0,0.1); }
 #filters-panel.open { transform: translateX(0); }
+.panel-header { padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+#close-filters { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
 
-.panel-header {
-  padding: 1.5rem 1.5rem 0.5rem 1.5rem; /* Réduit l'espace en bas car plus de trait */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.filter-main-title { font-size: 1.1rem; font-weight: 700; margin: 0; }
-
-#close-filters {
-  background: none; border: none; font-size: 1.2rem;
-  color: #000; cursor: pointer; padding: 5px;
-}
-
-.panel-scroll-content { padding: 1.5rem; overflow-y: auto; }
-
-/* Cadre Statuts */
-.filter-group-statut {
-  border: 1px solid var(--grey-border);
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  background-color: #fff;
-}
-.filter-group-statut legend { 
-    font-weight: 700; 
-    font-size: 0.95rem; 
-    padding-right: 10px;
-}
-
-.checkbox-list { display: flex; flex-direction: column; gap: 10px; }
-.custom-checkbox { font-size: 0.95rem; display: flex; align-items: center; gap: 10px; cursor: pointer; }
-
-/* Autres filtres */
-.filter-group-dsfr { border: none; margin-bottom: 1.25rem; padding: 0; }
-.label-bold { font-weight: 700; display: block; margin-bottom: 0.5rem; font-size: 0.95rem;}
-
-.custom-select, .input-wrapper input {
-  width: 100%; padding: 8px; background: var(--grey-background);
-  border: none; border-bottom: 2px solid var(--grey-border); font-family: 'Marianne';
-}
-
+.filter-group-statut { border: 1px solid var(--grey-border); padding: 1rem; margin: 0 1.5rem 1.5rem; }
+.filter-group-statut legend { font-weight: 700; margin-left: -5px; padding: 0 5px; }
+.checkbox-list { display: flex; flex-direction: column; gap: 8px; font-size: 0.95rem; }
+.filter-group-dsfr { padding: 0 1.5rem 1.25rem; }
+.label-bold { font-weight: 700; margin-bottom: 0.5rem; display: block; }
+.custom-select, .surface-inputs-dsfr input { width: 100%; padding: 8px; border: none; border-bottom: 2px solid var(--grey-border); background: #f6f6f6; font-family: 'Marianne'; }
 .surface-inputs-dsfr { display: flex; gap: 10px; }
-.input-wrapper { flex: 1; }
-.input-wrapper span { font-size: 0.7rem; font-weight: 700; color: #666; }
 
-/* Animation des points SVG (comme à l'origine) */
-.custom-div-icon svg {
-    transition: transform 0.2s ease-out;
-}
-
-/* POPUPS */
-.leaflet-popup-content, .leaflet-popup-content * {
-  font-family: 'Marianne', Arial, sans-serif !important;
-}
+.leaflet-popup-content, .leaflet-popup-content * { font-family: 'Marianne', sans-serif !important; }
