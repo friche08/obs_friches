@@ -3,7 +3,10 @@
 @font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Regular_Italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
 
-* { font-family: 'Marianne', Arial, sans-serif !important; }
+/* Force Marianne sur TOUT le document */
+html, body, button, select, input, textarea, .leaflet-container {
+    font-family: 'Marianne', Arial, sans-serif !important;
+}
 
 body { margin: 0; color: #161616; overflow-x: hidden; }
 
@@ -46,25 +49,27 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 #filters-panel.open { transform: translateX(0); }
 .panel-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
 .panel-header h2 { margin: 0; font-size: 1.1rem; font-weight: 700; }
-#close-filters { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+#close-filters { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #000; }
 .panel-content { padding: 0 20px 20px 20px; overflow-y: auto; }
 
 .status-fieldset { border: 1px solid #e5e5e5; background: #f6f6f6; padding: 15px; margin-bottom: 20px; }
 .status-fieldset legend { font-weight: 700; font-size: 0.9rem; padding: 0 5px; }
 .checkbox-list { display: flex; flex-direction: column; gap: 10px; }
-.checkbox-list label { font-weight: 400; display: flex; align-items: center; gap: 10px; cursor: pointer; margin:0; }
+.checkbox-list label { font-weight: 400; display: flex; align-items: center; gap: 10px; cursor: pointer; margin:0; font-size: 0.9rem !important; }
 
 .filter-group { margin-bottom: 20px; }
 .filter-group label { display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.9rem; }
-select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid #e5e5e5; box-sizing: border-box; }
+select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid #e5e5e5; box-sizing: border-box; background: #fff; }
 .surface-inputs { display: flex; gap: 10px; }
 
-/* Popup styles */
+/* Popup Leaflet */
+.leaflet-popup-content-wrapper { border-radius: 2px; }
+.leaflet-popup-content { width: 300px !important; line-height: 1.4; margin: 15px !important; }
 .popup-header-site { font-weight: 700; font-size: 1.1rem; color: #000091; margin-bottom: 2px; }
 .popup-commune { font-style: italic; font-size: 0.9rem; color: #666; display: block; margin-bottom: 8px; }
-.popup-sep { border: 0; border-top: 1px solid #eee; margin: 8px 0; }
-.popup-img { width: 100%; height: auto; border-radius: 2px; margin: 8px 0; display: block; }
-.img-alt-text { font-size: 0.75rem; color: #999; font-style: italic; }
+.popup-sep { border: 0; border-top: 1px solid #eee; margin: 10px 0; }
+.popup-img { width: 100%; height: auto; border-radius: 2px; margin: 10px 0; display: block; }
+.img-alt-text { font-size: 0.75rem; color: #999; font-style: italic; margin: 10px 0; display: block; }
 .popup-details div { margin-bottom: 4px; font-size: 0.9rem; }
 
 .picto { background: transparent; border: none; }
