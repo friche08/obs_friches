@@ -1,6 +1,4 @@
-/* ------------------------------------------------------------------------- */
-/* 1. POLICES MARIANNE (Gardées telles quelles)                              */
-/* ------------------------------------------------------------------------- */
+/* 1. POLICES MARIANNE */
 @font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Thin.woff2') format('woff2'); font-weight: 100; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Light.woff2') format('woff2'); font-weight: 300; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
@@ -10,7 +8,6 @@
 
 :root {
   --blue-france: #000091;
-  --text-title: #161616;
   --text-default: #3a3a3a;
   --grey-border: #cecece;
   --grey-background: #f6f6f6;
@@ -19,25 +16,27 @@
 
 body {
   margin: 0;
-  font-family: 'Marianne', Arial, sans-serif;
-  overflow: hidden;
+  font-family: 'Marianne', sans-serif;
+  background-color: var(--grey-background);
 }
 
+/* CARTE : 90% de largeur pour faciliter le scroll mobile sur les bords */
 #map {
-  width: 100%;
-  height: calc(100vh - 110px); /* Ajustement dynamique selon le header */
+  width: 90%;
+  height: 80vh;
+  margin: 20px auto; 
+  border: 1px solid var(--grey-border);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   z-index: 1;
+  touch-action: pan-y;
 }
 
-/* ------------------------------------------------------------------------- */
-/* 4. HEADER COMPACT                                                         */
-/* ------------------------------------------------------------------------- */
+/* HEADER */
 .custom-header {
   background: var(--white);
-  padding: 0.75rem 1.5rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  position: relative;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  border-bottom: 1px solid var(--grey-border);
 }
 
 .brand-block {
@@ -54,52 +53,40 @@ body {
 .brand-text {
   border-left: 1px solid var(--grey-border);
   padding-left: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
 }
 
 .main-title {
   font-weight: 800;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   margin: 0;
   color: var(--blue-france);
-  text-transform: none;
 }
 
 .service-row {
   display: flex;
   align-items: center;
-  gap: 1.5rem; /* Espace entre le service et le bouton */
+  gap: 1rem;
   margin-top: 0.25rem;
 }
 
 .mention-service {
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   margin: 0;
-  color: var(--text-default);
 }
 
 .dsfr-button {
   background-color: var(--blue-france);
   color: var(--white);
   border: none;
-  padding: 4px 12px;
-  font-family: 'Marianne', sans-serif;
+  padding: 4px 10px;
+  font-family: 'Marianne';
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   cursor: pointer;
-  transition: background 0.2s;
 }
 
-.dsfr-button:hover {
-  background-color: #1212ff;
-}
-
-/* ------------------------------------------------------------------------- */
-/* 5. PANNEAU LATÉRAL (Fix pour le JS)                                       */
-/* ------------------------------------------------------------------------- */
+/* PANNEAU FILTRES */
 #filters-panel {
   position: fixed;
   top: 0;
@@ -109,32 +96,22 @@ body {
   background: var(--white);
   box-shadow: -2px 0 10px rgba(0,0,0,0.1);
   z-index: 2000;
-  transform: translateX(100%); /* Caché par défaut */
+  transform: translateX(100%);
   transition: transform 0.3s ease;
-  display: flex;
-  flex-direction: column;
 }
 
-#filters-panel.open {
-  transform: translateX(0); /* Apparaît via le JS */
-}
+#filters-panel.open { transform: translateX(0); }
 
 .panel-header {
-  padding: 1rem 1.5rem;
+  padding: 1rem;
   border-bottom: 1px solid var(--grey-border);
   display: flex;
   justify-content: space-between;
-  align-items: center;
 }
 
-.panel-scroll-content {
-  padding: 1.5rem;
-  overflow-y: auto;
-}
+.panel-scroll-content { padding: 1.5rem; }
 
-/* Style des filtres - épuré */
 .filter-group-dsfr { border: none; margin-bottom: 1.25rem; padding: 0; }
-.label-bold, legend { font-weight: 700; display: block; margin-bottom: 0.5rem; }
 
 .custom-select, .input-wrapper input {
   width: 100%;
@@ -147,17 +124,10 @@ body {
 
 .surface-inputs-dsfr { display: flex; gap: 10px; }
 .input-wrapper { flex: 1; }
-.input-wrapper span { font-size: 0.7rem; font-weight: 700; color: #666; }
+.input-wrapper span { font-size: 0.7rem; color: #666; }
 
-/* ------------------------------------------------------------------------- */
-/* 6. POPUPS (Typographie uniquement)                                        */
-/* ------------------------------------------------------------------------- */
-.leaflet-popup-content {
-  font-family: 'Marianne', sans-serif !important;
-}
-
-/* On s'assure que les titres dans tes popups JS d'origine soient propres */
-.leaflet-popup-content strong {
-  font-weight: 700;
-  color: var(--blue-france);
+/* POPUPS : Force la police Marianne */
+.leaflet-popup-content, 
+.leaflet-popup-content * {
+  font-family: 'Marianne', Arial, sans-serif !important;
 }
