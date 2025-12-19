@@ -36,26 +36,18 @@
 
   <aside id="filters-panel">
     <div class="panel-header">
-      <h2>Filtres</h2>
+      <h2 class="filter-main-title">Filtres</h2>
       <button id="close-filters" aria-label="Fermer">✕</button>
     </div>
 
     <div class="panel-scroll-content">
-      <fieldset class="filter-group-dsfr">
+      <fieldset class="filter-group-statut">
         <legend>Statut de la friche</legend>
         <div class="checkbox-list">
-          <label class="custom-checkbox">
-            <input type="checkbox" value="friche potentielle"> Friche potentielle
-          </label>
-          <label class="custom-checkbox">
-            <input type="checkbox" value="friche sans projet" checked> Friche sans projet
-          </label>
-          <label class="custom-checkbox">
-            <input type="checkbox" value="friche avec projet" checked> Friche avec projet
-          </label>
-          <label class="custom-checkbox">
-            <input type="checkbox" value="friche reconvertie"> Friche reconvertie
-          </label>
+          <label class="custom-checkbox"><input type="checkbox" value="friche potentielle"> Friche potentielle</label>
+          <label class="custom-checkbox"><input type="checkbox" value="friche sans projet" checked> Friche sans projet</label>
+          <label class="custom-checkbox"><input type="checkbox" value="friche avec projet" checked> Friche avec projet</label>
+          <label class="custom-checkbox"><input type="checkbox" value="friche reconvertie"> Friche reconvertie</label>
         </div>
       </fieldset>
 
@@ -64,11 +56,11 @@
         <div class="surface-inputs-dsfr">
           <div class="input-wrapper">
             <span>Min</span>
-            <input type="number" id="surface-min" placeholder="0">
+            <input type="number" id="surface-min" value="0" step="1000">
           </div>
           <div class="input-wrapper">
             <span>Max</span>
-            <input type="number" id="surface-max" placeholder="∞">
+            <input type="number" id="surface-max" placeholder="Max" step="1000">
           </div>
         </div>
       </div>
