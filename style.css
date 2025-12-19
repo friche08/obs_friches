@@ -1,87 +1,42 @@
-/* Définition exhaustive des polices Marianne */
-@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Thin.woff2') format('woff2'); font-weight: 100; font-style: normal; }
-@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Light.woff2') format('woff2'); font-weight: 300; font-style: normal; }
-@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; }
-@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Medium.woff2') format('woff2'); font-weight: 500; font-style: normal; }
-@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; }
-@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-ExtraBold.woff2') format('woff2'); font-weight: 800; font-style: normal; }
-/* Italic */
-@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Regular_Italic.woff2') format('woff2'); font-weight: 400; font-style: italic; }
+@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Light.woff2') format('woff2'); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Regular_Italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
 
-:root {
-    --blue-marianne: #000091;
-    --text-grey: #161616;
-    --border-grey: #e5e5e5;
-}
+* { font-family: 'Marianne', Arial, sans-serif !important; }
 
-body {
-    margin: 0;
-    font-family: 'Marianne', sans-serif;
-    color: var(--text-grey);
-}
+body { margin: 0; color: #161616; overflow-x: hidden; }
 
-/* Header avec ombre légère */
 .fr-header {
     background: #fff;
-    border-bottom: 1px solid var(--border-grey);
+    border-bottom: 1px solid #e5e5e5;
     padding: 10px 0;
     box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     position: relative;
     z-index: 1001;
 }
 
-.header-main {
-    max-width: 90%;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
+.header-main { max-width: 90%; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
 .header-logo-block { display: flex; align-items: center; }
 .logo-pref { height: 70px; width: auto; }
-.separator-v { width: 1px; height: 50px; background-color: var(--border-grey); margin: 0 15px; }
+.separator-v { width: 1px; height: 50px; background-color: #e5e5e5; margin: 0 15px; }
 
-/* Titre en casse normale (pas tout en capitales) */
-.title-main {
-    margin: 0;
-    color: var(--blue-marianne);
-    font-weight: 700;
-    font-size: 1.3rem;
-}
-
+.title-main { margin: 0; color: #000091; font-weight: 700; font-size: 1.3rem; line-height: 1.2; }
 .title-sub { margin: 0; font-weight: 700; font-size: 0.85rem; }
 
-/* Bouton Filtres Responsive */
 #toggle-filters {
-    background-color: var(--blue-marianne);
-    color: #fff;
-    border: none;
-    padding: 10px 14px;
-    font-family: 'Marianne';
-    font-weight: 700;
-    cursor: pointer;
-    border-radius: 4px;
-    white-space: nowrap;
+    background-color: #000091; color: #fff; border: none; padding: 10px 14px;
+    font-weight: 700; cursor: pointer; border-radius: 4px;
 }
 
 @media (max-width: 768px) {
     .btn-text { display: none; }
-    #toggle-filters { padding: 10px 15px; font-size: 1.2rem; }
-    .separator-v { margin: 0 10px; }
-    .title-main { font-size: 1.1rem; }
+    .separator-v { margin: 0 8px; }
+    .title-main { font-size: 1rem; }
 }
 
-/* Carte collée au header */
-#map {
-    width: 90%;
-    height: 75vh;
-    margin: 0 auto; /* Pas de marge haute pour coller au header */
-    border: 1px solid var(--border-grey);
-    z-index: 1;
-}
+#map { width: 90%; height: 75vh; margin: 0 auto; border: 1px solid #e5e5e5; z-index: 1; }
 
-/* Panneau Filtres */
 #filters-panel {
     position: fixed; top: 0; right: 0; width: 350px; max-width: 85%; height: 100%;
     background: #fff; box-shadow: -4px 0 12px rgba(0,0,0,0.1);
@@ -94,27 +49,22 @@ body {
 #close-filters { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
 .panel-content { padding: 0 20px 20px 20px; overflow-y: auto; }
 
-/* Styles Filtres */
-.status-fieldset { border: 1px solid var(--border-grey); background: #f6f6f6; padding: 15px; margin-bottom: 20px; }
+.status-fieldset { border: 1px solid #e5e5e5; background: #f6f6f6; padding: 15px; margin-bottom: 20px; }
 .status-fieldset legend { font-weight: 700; font-size: 0.9rem; padding: 0 5px; }
 .checkbox-list { display: flex; flex-direction: column; gap: 10px; }
-.checkbox-list label { font-weight: 400; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.checkbox-list label { font-weight: 400; display: flex; align-items: center; gap: 10px; cursor: pointer; margin:0; }
+
 .filter-group { margin-bottom: 20px; }
 .filter-group label { display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.9rem; }
-select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid var(--border-grey); font-family: 'Marianne'; }
+select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid #e5e5e5; box-sizing: border-box; }
 .surface-inputs { display: flex; gap: 10px; }
 
-/* Popups Leaflet (Forçage Marianne) */
-.leaflet-popup-content-wrapper { border-radius: 2px; }
-.leaflet-popup-content { 
-    width: 300px !important; 
-    font-family: 'Marianne', sans-serif !important; 
-    line-height: 1.4;
-}
-.popup-header h3 { color: var(--blue-marianne); margin: 0; font-weight: 700; font-size: 1.1rem; }
-.popup-header div { font-style: italic; font-size: 0.9rem; color: #666; }
-.popup-separator { border: 0; border-top: 1px solid #eee; margin: 10px 0; }
-.popup-img { width: 100%; height: auto; display: block; margin-bottom: 10px; border-radius: 2px; }
-.popup-details { font-size: 0.9rem; }
+/* Popup styles */
+.popup-header-site { font-weight: 700; font-size: 1.1rem; color: #000091; margin-bottom: 2px; }
+.popup-commune { font-style: italic; font-size: 0.9rem; color: #666; display: block; margin-bottom: 8px; }
+.popup-sep { border: 0; border-top: 1px solid #eee; margin: 8px 0; }
+.popup-img { width: 100%; height: auto; border-radius: 2px; margin: 8px 0; display: block; }
+.img-alt-text { font-size: 0.75rem; color: #999; font-style: italic; }
+.popup-details div { margin-bottom: 4px; font-size: 0.9rem; }
 
 .picto { background: transparent; border: none; }
