@@ -21,7 +21,7 @@ const selEpci = document.getElementById('filter-epci');
 const selCommune = document.getElementById('filter-commune');
 const selFriche = document.getElementById('filter-friche');
 
-// 1. Marqueurs SVG (Version originale avec animation)
+// 1. Marqueurs et Couleurs
 function getColorForStatus(s) {
     const colors = { "friche potentielle": "#aea397", "friche sans projet": "#745b47", "friche avec projet": "#2b7756", "friche reconvertie": "#99c221" };
     return colors[s] || "#777";
@@ -48,8 +48,6 @@ Papa.parse('data.csv', {
     download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
     complete: function (results) {
         allData = results.data;
-        
-        // Calcul surface max
         const maxS = Math.max(...allData.map(d => d.unite_fonciere_surface || 0));
         document.getElementById('surface-max').value = Math.ceil(maxS / 1000) * 1000;
         
@@ -58,9 +56,8 @@ Papa.parse('data.csv', {
         addMarkers(allData);
         initCascadingFilters();
         
-        // --- ACTION : On initialise les menus déroulants dès maintenant ---
+        // Initialisation immédiate des listes et de la vue
         updateFilterOptions();
-        updateMap(false);
     }
 });
 
@@ -82,22 +79,19 @@ function addMarkers(rows) {
             riseOnHover: true 
         });
 
-        // Nettoyage pollution (enlever le mot "pollution" pour éviter doublon)
         const pollutionClean = (row.sol_pollution_existe || "").replace(/pollution /gi, "").trim();
-
-        // Nettoyage Propriétaires
         const pRaw = row.proprio_nom || "";
         const pArray = pRaw.split('|').map(p => p.trim() === "_X_" ? "(anonymisé)" : p.trim());
         const labelProprio = pArray.length > 1 ? "Propriétaires" : "Propriétaire";
-
         const imagePath = `photos/${row.site_id}.webp`;
-        const altText = `Photo ${row.site_nom} à ${row.comm_nom}`;
 
         const popupContent = `
             <div class="popup-header-site">${row.site_nom || 'Friche'}</div>
             <span class="popup-commune">${row.comm_nom || ''}</span>
             <hr class="popup-sep">
-            <img src="${imagePath}" class="popup-img" alt="${altText}" onerror="this.outerHTML='<span class=\'img-alt-text\'>${altText}</span>'"/>
+            <div class="img-container">
+                <img src="${imagePath}" class="popup-img" onerror="this.parentElement.style.display='none'"/>
+            </div>
             <div class="popup-details">
                 <div><strong>Statut :</strong> ${row.site_statut}</div>
                 <div><strong>Surface :</strong> ${row.unite_fonciere_surface ? row.unite_fonciere_surface.toLocaleString('fr-FR') + ' m²' : 'Inconnue'}</div>
@@ -111,6 +105,47 @@ function addMarkers(rows) {
     });
 }
 
+// 3. Zoom Dynamique (fitMap)
+function fitMap() {
+    const visibleCoords = markers
+        .filter(item => map.hasLayer(item.marker))
+        .map(item => item.marker.getLatLng());
+
+    if (visibleCoords.length > 0) {
+        const group = L.latLngBounds(visibleCoords);
+        map.fitBounds(group, { 
+            padding: [50, 50], // Marge de sécurité des bords
+            maxZoom: 15        // Limite pour ne pas être trop près sur un seul point
+        });
+    }
+}
+
+function updateMap(shouldFit = false) {
+    const baseFiltered = getFilteredData();
+    const showPolygons = map.getZoom() >= ZOOM_THRESHOLD;
+    polygonsLayerGroup.clearLayers();
+
+    markers.forEach(item => {
+        const d = item.data;
+        let visible = baseFiltered.includes(d);
+        if (visible && selEpci.value && d.epci_nom !== selEpci.value) visible = false;
+        if (visible && selCommune.value && d.comm_nom !== selCommune.value) visible = false;
+        if (visible && selFriche.value && d.site_nom !== selFriche.value) visible = false;
+
+        if (visible) {
+            if (!map.hasLayer(item.marker)) item.marker.addTo(map);
+            if (showPolygons && d.site_id && polygonsDict[d.site_id]) {
+                polygonsLayerGroup.addLayer(polygonsDict[d.site_id]);
+            }
+        } else {
+            map.removeLayer(item.marker);
+        }
+    });
+
+    if (shouldFit) fitMap();
+}
+
+// 4. GeoJSON (Ardennes + Friches)
 function loadArdennesOutline() {
     fetch('ardennes.geojson').then(r => r.json()).then(geojson => {
         L.geoJSON(geojson, { style: { color: '#ffffff', weight: 5, opacity: 1, fillOpacity: 0, interactive: false } }).addTo(ardennesLayerGroup);
@@ -140,7 +175,7 @@ function loadGeoJsonData() {
     });
 }
 
-// 3. Mécanique des filtres
+// 5. Filtres et Listes
 function getFilteredData() {
     const sMin = parseFloat(document.getElementById('surface-min').value) || 0;
     const sMax = parseFloat(document.getElementById('surface-max').value) || Infinity;
@@ -151,33 +186,6 @@ function getFilteredData() {
         const s = d.unite_fonciere_surface || 0;
         return (s >= sMin && s <= sMax);
     });
-}
-
-function updateMap(shouldFit = false) {
-    const baseFiltered = getFilteredData();
-    const showPolygons = map.getZoom() >= ZOOM_THRESHOLD;
-    polygonsLayerGroup.clearLayers();
-
-    markers.forEach(item => {
-        const d = item.data;
-        let visible = baseFiltered.includes(d);
-        if (visible && selEpci.value && d.epci_nom !== selEpci.value) visible = false;
-        if (visible && selCommune.value && d.comm_nom !== selCommune.value) visible = false;
-        if (visible && selFriche.value && d.site_nom !== selFriche.value) visible = false;
-
-        if (visible) {
-            if (!map.hasLayer(item.marker)) item.marker.addTo(map);
-            if (showPolygons && d.site_id && polygonsDict[d.site_id]) polygonsLayerGroup.addLayer(polygonsDict[d.site_id]);
-        } else {
-            map.removeLayer(item.marker);
-        }
-    });
-    if (shouldFit) fitMap();
-}
-
-function fitMap() {
-    const coords = markers.filter(i => map.hasLayer(i.marker)).map(i => i.marker.getLatLng());
-    if (coords.length > 0) map.fitBounds(L.latLngBounds(coords), { padding: [40, 40], maxZoom: 15 });
 }
 
 function initCascadingFilters() {
@@ -202,7 +210,7 @@ function updateFilterOptions() {
     if (selCommune.value) fFriche = fFriche.filter(d => d.comm_nom === selCommune.value);
     populateSelect(selFriche, fFriche, 'site_nom', '- Toutes les friches -');
     
-    updateMap(false);
+    updateMap(true); // Recadre la carte après filtrage
 }
 
 function populateSelect(s, d, k, t) {
