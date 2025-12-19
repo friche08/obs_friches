@@ -1,36 +1,33 @@
-/* Importation de la police Marianne (assure-toi que les fichiers sont dans /fonts/) */
-@font-face {
-    font-family: 'Marianne';
-    src: url('fonts/Marianne-Regular.woff2') format('woff2');
-    font-weight: normal;
-    font-style: normal;
-}
-@font-face {
-    font-family: 'Marianne';
-    src: url('fonts/Marianne-Bold.woff2') format('woff2');
-    font-weight: bold;
-    font-style: normal;
-}
+/* Définition exhaustive des polices Marianne */
+@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Thin.woff2') format('woff2'); font-weight: 100; font-style: normal; }
+@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Light.woff2') format('woff2'); font-weight: 300; font-style: normal; }
+@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; }
+@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Medium.woff2') format('woff2'); font-weight: 500; font-style: normal; }
+@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; }
+@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-ExtraBold.woff2') format('woff2'); font-weight: 800; font-style: normal; }
+/* Italic */
+@font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Regular_Italic.woff2') format('woff2'); font-weight: 400; font-style: italic; }
 
 :root {
     --blue-marianne: #000091;
     --text-grey: #161616;
-    --light-grey: #eeeeee;
     --border-grey: #e5e5e5;
 }
 
 body {
     margin: 0;
-    font-family: 'Marianne', Arial, sans-serif;
+    font-family: 'Marianne', sans-serif;
     color: var(--text-grey);
-    background-color: #fff;
 }
 
-/* Header DSFR Style */
+/* Header avec ombre légère */
 .fr-header {
     background: #fff;
     border-bottom: 1px solid var(--border-grey);
     padding: 10px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    position: relative;
+    z-index: 1001;
 }
 
 .header-main {
@@ -41,198 +38,83 @@ body {
     align-items: center;
 }
 
-.header-logo-block {
-    display: flex;
-    align-items: center;
-}
+.header-logo-block { display: flex; align-items: center; }
+.logo-pref { height: 70px; width: auto; }
+.separator-v { width: 1px; height: 50px; background-color: var(--border-grey); margin: 0 15px; }
 
-.logo-pref {
-    height: 70px;
-    width: auto;
-}
-
-.separator-v {
-    width: 1px;
-    height: 50px;
-    background-color: var(--border-grey);
-    margin: 0 20px;
-}
-
+/* Titre en casse normale (pas tout en capitales) */
 .title-main {
     margin: 0;
     color: var(--blue-marianne);
-    font-weight: bold;
-    font-size: 1.4rem;
-    text-transform: uppercase;
+    font-weight: 700;
+    font-size: 1.3rem;
 }
 
-.title-sub {
-    margin: 0;
-    font-weight: bold;
-    font-size: 0.9rem;
-}
+.title-sub { margin: 0; font-weight: 700; font-size: 0.85rem; }
 
-/* Bouton Filtres */
+/* Bouton Filtres Responsive */
 #toggle-filters {
     background-color: var(--blue-marianne);
     color: #fff;
     border: none;
-    padding: 8px 16px;
+    padding: 10px 14px;
     font-family: 'Marianne';
-    font-weight: bold;
+    font-weight: 700;
     cursor: pointer;
     border-radius: 4px;
+    white-space: nowrap;
 }
 
-/* Carte */
+@media (max-width: 768px) {
+    .btn-text { display: none; }
+    #toggle-filters { padding: 10px 15px; font-size: 1.2rem; }
+    .separator-v { margin: 0 10px; }
+    .title-main { font-size: 1.1rem; }
+}
+
+/* Carte collée au header */
 #map {
     width: 90%;
     height: 75vh;
-    margin: 20px auto;
+    margin: 0 auto; /* Pas de marge haute pour coller au header */
     border: 1px solid var(--border-grey);
     z-index: 1;
 }
 
-/* Panneau Latéral */
+/* Panneau Filtres */
 #filters-panel {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 350px;
-    max-width: 100%;
-    height: 100%;
-    background: #fff;
-    box-shadow: -4px 0 12px rgba(0,0,0,0.1);
-    z-index: 2000;
-    transform: translateX(100%);
-    transition: transform 0.3s ease-in-out;
-    display: flex;
-    flex-direction: column;
+    position: fixed; top: 0; right: 0; width: 350px; max-width: 85%; height: 100%;
+    background: #fff; box-shadow: -4px 0 12px rgba(0,0,0,0.1);
+    z-index: 2000; transform: translateX(100%); transition: transform 0.3s ease;
+    display: flex; flex-direction: column;
 }
+#filters-panel.open { transform: translateX(0); }
+.panel-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+.panel-header h2 { margin: 0; font-size: 1.1rem; font-weight: 700; }
+#close-filters { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+.panel-content { padding: 0 20px 20px 20px; overflow-y: auto; }
 
-#filters-panel.open {
-    transform: translateX(0);
-}
+/* Styles Filtres */
+.status-fieldset { border: 1px solid var(--border-grey); background: #f6f6f6; padding: 15px; margin-bottom: 20px; }
+.status-fieldset legend { font-weight: 700; font-size: 0.9rem; padding: 0 5px; }
+.checkbox-list { display: flex; flex-direction: column; gap: 10px; }
+.checkbox-list label { font-weight: 400; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.filter-group { margin-bottom: 20px; }
+.filter-group label { display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.9rem; }
+select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid var(--border-grey); font-family: 'Marianne'; }
+.surface-inputs { display: flex; gap: 10px; }
 
-.panel-header {
-    padding: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.panel-header h2 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: bold;
-}
-
-#close-filters {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: #000;
-}
-
-.panel-content {
-    padding: 0 20px 20px 20px;
-    overflow-y: auto;
-}
-
-/* Filtres UI */
-.filter-group {
-    margin-bottom: 20px;
-}
-
-.filter-group label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 8px;
-    font-size: 0.9rem;
-}
-
-.status-fieldset {
-    border: 1px solid var(--border-grey);
-    background-color: #f6f6f6;
-    padding: 15px;
-    margin: 0 0 20px 0;
-}
-
-.status-fieldset legend {
-    font-weight: bold;
-    font-size: 0.9rem;
-    padding: 0 5px;
-}
-
-.checkbox-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.checkbox-list label {
-    font-weight: normal;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 0;
-    cursor: pointer;
-}
-
-select, input[type="number"] {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid var(--border-grey);
-    font-family: 'Marianne';
-    font-size: 0.9rem;
-}
-
-.surface-inputs {
-    display: flex;
-    gap: 10px;
-}
-
-/* Popups Leaflet */
-.leaflet-popup-content-wrapper {
-    border-radius: 0;
-    font-family: 'Marianne', sans-serif !important;
-}
-
-.leaflet-popup-content {
-    width: 280px !important;
-    font-family: 'Marianne', sans-serif !important;
-}
-
-.leaflet-popup-content h3 {
-    margin: 0 0 2px 0;
-    font-weight: bold;
-    color: var(--blue-marianne);
-}
-
-.popup-commune {
-    font-style: italic;
-    font-size: 0.85rem;
-    margin-bottom: 8px;
-    display: block;
-}
-
-.popup-sep {
-    border: 0;
-    border-top: 1px solid var(--border-grey);
-    margin: 10px 0;
-}
-
-.popup-img {
-    width: 100%;
-    height: auto;
-    border-radius: 2px;
-    margin-bottom: 10px;
-}
-
-.popup-details {
-    font-size: 0.85rem;
+/* Popups Leaflet (Forçage Marianne) */
+.leaflet-popup-content-wrapper { border-radius: 2px; }
+.leaflet-popup-content { 
+    width: 300px !important; 
+    font-family: 'Marianne', sans-serif !important; 
     line-height: 1.4;
 }
+.popup-header h3 { color: var(--blue-marianne); margin: 0; font-weight: 700; font-size: 1.1rem; }
+.popup-header div { font-style: italic; font-size: 0.9rem; color: #666; }
+.popup-separator { border: 0; border-top: 1px solid #eee; margin: 10px 0; }
+.popup-img { width: 100%; height: auto; display: block; margin-bottom: 10px; border-radius: 2px; }
+.popup-details { font-size: 0.9rem; }
 
 .picto { background: transparent; border: none; }
