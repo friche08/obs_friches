@@ -56,8 +56,7 @@ Papa.parse('data.csv', {
         addMarkers(allData);
         initCascadingFilters();
         
-        // Initialisation immédiate des listes et de la vue
-        updateFilterOptions();
+        updateFilterOptions(); // Remplit les listes et ajuste la vue au démarrage
     }
 });
 
@@ -105,7 +104,7 @@ function addMarkers(rows) {
     });
 }
 
-// 3. Zoom Dynamique (fitMap)
+// 3. Zoom Dynamique
 function fitMap() {
     const visibleCoords = markers
         .filter(item => map.hasLayer(item.marker))
@@ -114,8 +113,8 @@ function fitMap() {
     if (visibleCoords.length > 0) {
         const group = L.latLngBounds(visibleCoords);
         map.fitBounds(group, { 
-            padding: [50, 50], // Marge de sécurité des bords
-            maxZoom: 15        // Limite pour ne pas être trop près sur un seul point
+            padding: [50, 50], 
+            maxZoom: 15        
         });
     }
 }
@@ -145,7 +144,7 @@ function updateMap(shouldFit = false) {
     if (shouldFit) fitMap();
 }
 
-// 4. GeoJSON (Ardennes + Friches)
+// 4. Données Géo
 function loadArdennesOutline() {
     fetch('ardennes.geojson').then(r => r.json()).then(geojson => {
         L.geoJSON(geojson, { style: { color: '#ffffff', weight: 5, opacity: 1, fillOpacity: 0, interactive: false } }).addTo(ardennesLayerGroup);
@@ -175,7 +174,7 @@ function loadGeoJsonData() {
     });
 }
 
-// 5. Filtres et Listes
+// 5. Filtres
 function getFilteredData() {
     const sMin = parseFloat(document.getElementById('surface-min').value) || 0;
     const sMax = parseFloat(document.getElementById('surface-max').value) || Infinity;
@@ -210,7 +209,7 @@ function updateFilterOptions() {
     if (selCommune.value) fFriche = fFriche.filter(d => d.comm_nom === selCommune.value);
     populateSelect(selFriche, fFriche, 'site_nom', '- Toutes les friches -');
     
-    updateMap(true); // Recadre la carte après filtrage
+    updateMap(true);
 }
 
 function populateSelect(s, d, k, t) {
@@ -221,7 +220,7 @@ function populateSelect(s, d, k, t) {
     if ([...s.options].some(o => o.value === val)) s.value = val;
 }
 
-// UI Panneau
+// UI
 const panel = document.getElementById('filters-panel');
 document.getElementById('toggle-filters').addEventListener('click', (e) => { e.stopPropagation(); panel.classList.add('open'); });
 document.getElementById('close-filters').addEventListener('click', () => panel.classList.remove('open'));
