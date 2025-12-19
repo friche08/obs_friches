@@ -31,7 +31,7 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 /* CARTE : Hauteur adaptative */
 #map { 
     width: 90%; 
-    height: 90vh; /* 90% sur PC */
+    height: 82vh; /* 82% sur PC */
     margin: 0 auto; 
     border: 1px solid #e5e5e5; 
     z-index: 1; 
@@ -42,7 +42,7 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
     .btn-text { display: none; }
     .separator-v { margin: 0 8px; }
     .title-main { font-size: 1rem; }
-    #map { height: 75vh; } /* 75% sur Mobile */
+    #map { height: 76vh; } /* 76% sur Mobile */
 }
 
 /* Panneau de filtres */
@@ -77,3 +77,4 @@ select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid #e5
 .popup-details div { margin-bottom: 4px; font-size: 0.9rem; }
 
 .picto { background: transparent; border: none; }
+
