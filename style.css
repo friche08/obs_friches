@@ -1,8 +1,6 @@
 /* 1. POLICES MARIANNE */
 @font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Thin.woff2') format('woff2'); font-weight: 100; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Light.woff2') format('woff2'); font-weight: 300; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Medium.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Marianne'; src: url('fonts/Marianne-ExtraBold.woff2') format('woff2'); font-weight: 800; font-style: normal; font-display: swap; }
 
@@ -21,7 +19,6 @@ body {
   color: var(--text-default);
 }
 
-/* CARTE : 90% Largeur */
 #map {
   width: 90%;
   height: 80vh;
@@ -75,8 +72,7 @@ body {
 #filters-panel.open { transform: translateX(0); }
 
 .panel-header {
-  padding: 1.5rem 1.5rem;
-  /* Suppression du trait séparateur ici */
+  padding: 1.5rem 1.5rem 0.5rem 1.5rem; /* Réduit l'espace en bas car plus de trait */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -89,7 +85,7 @@ body {
   color: #000; cursor: pointer; padding: 5px;
 }
 
-.panel-scroll-content { padding: 0 1.5rem 1.5rem 1.5rem; overflow-y: auto; }
+.panel-scroll-content { padding: 1.5rem; overflow-y: auto; }
 
 /* Cadre Statuts */
 .filter-group-statut {
@@ -97,13 +93,11 @@ body {
   padding: 1rem;
   margin-bottom: 1.5rem;
   background-color: #fff;
-  margin-left: 0;
 }
 .filter-group-statut legend { 
     font-weight: 700; 
     font-size: 0.95rem; 
-    margin-left: -5px; /* Aligné à gauche avec les autres titres */
-    padding: 0 5px;
+    padding-right: 10px;
 }
 
 .checkbox-list { display: flex; flex-direction: column; gap: 10px; }
@@ -121,6 +115,11 @@ body {
 .surface-inputs-dsfr { display: flex; gap: 10px; }
 .input-wrapper { flex: 1; }
 .input-wrapper span { font-size: 0.7rem; font-weight: 700; color: #666; }
+
+/* Animation des points SVG (comme à l'origine) */
+.custom-div-icon svg {
+    transition: transform 0.2s ease-out;
+}
 
 /* POPUPS */
 .leaflet-popup-content, .leaflet-popup-content * {
