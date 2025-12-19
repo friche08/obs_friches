@@ -21,7 +21,7 @@ const selEpci = document.getElementById('filter-epci');
 const selCommune = document.getElementById('filter-commune');
 const selFriche = document.getElementById('filter-friche');
 
-// 1. Marqueurs SVG Originaux (Conservés avec riseOnHover)
+// 1. Marqueurs SVG (Version originale avec animation)
 function getColorForStatus(s) {
     const colors = { "friche potentielle": "#aea397", "friche sans projet": "#745b47", "friche avec projet": "#2b7756", "friche reconvertie": "#99c221" };
     return colors[s] || "#777";
@@ -48,6 +48,8 @@ Papa.parse('data.csv', {
     download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
     complete: function (results) {
         allData = results.data;
+        
+        // Calcul surface max
         const maxS = Math.max(...allData.map(d => d.unite_fonciere_surface || 0));
         document.getElementById('surface-max').value = Math.ceil(maxS / 1000) * 1000;
         
@@ -55,6 +57,9 @@ Papa.parse('data.csv', {
         loadGeoJsonData();
         addMarkers(allData);
         initCascadingFilters();
+        
+        // --- ACTION : On initialise les menus déroulants dès maintenant ---
+        updateFilterOptions();
         updateMap(false);
     }
 });
@@ -77,13 +82,13 @@ function addMarkers(rows) {
             riseOnHover: true 
         });
 
-        // Traitement Propriétaires
+        // Nettoyage pollution (enlever le mot "pollution" pour éviter doublon)
+        const pollutionClean = (row.sol_pollution_existe || "").replace(/pollution /gi, "").trim();
+
+        // Nettoyage Propriétaires
         const pRaw = row.proprio_nom || "";
         const pArray = pRaw.split('|').map(p => p.trim() === "_X_" ? "(anonymisé)" : p.trim());
         const labelProprio = pArray.length > 1 ? "Propriétaires" : "Propriétaire";
-        
-        // Traitement Pollution
-        const pollutionClean = (row.sol_pollution_existe || "").replace(/pollution /gi, "").trim();
 
         const imagePath = `photos/${row.site_id}.webp`;
         const altText = `Photo ${row.site_nom} à ${row.comm_nom}`;
@@ -95,7 +100,7 @@ function addMarkers(rows) {
             <img src="${imagePath}" class="popup-img" alt="${altText}" onerror="this.outerHTML='<span class=\'img-alt-text\'>${altText}</span>'"/>
             <div class="popup-details">
                 <div><strong>Statut :</strong> ${row.site_statut}</div>
-                <div><strong>Surface :</strong> ${row.unite_fonciere_surface ? row.unite_fonciere_surface.toLocaleString() + ' m²' : 'Inconnue'}</div>
+                <div><strong>Surface :</strong> ${row.unite_fonciere_surface ? row.unite_fonciere_surface.toLocaleString('fr-FR') + ' m²' : 'Inconnue'}</div>
                 <div><strong>Pollution :</strong> ${pollutionClean || 'Inconnue'}</div>
                 <div><strong>${labelProprio} :</strong> ${pArray.join(', ')}</div>
             </div>`;
@@ -124,7 +129,10 @@ function loadGeoJsonData() {
                 const id = f.properties.site_id;
                 if (id) {
                     polygonsDict[id] = layer;
-                    layer.on('click', (e) => { L.DomEvent.stopPropagation(e); if(markersDict[id]) markersDict[id].openPopup(); });
+                    layer.on('click', (e) => { 
+                        L.DomEvent.stopPropagation(e); 
+                        if(markersDict[id]) markersDict[id].openPopup(); 
+                    });
                 }
             }
         });
@@ -132,7 +140,7 @@ function loadGeoJsonData() {
     });
 }
 
-// 3. Mécanique des filtres (Restaurée)
+// 3. Mécanique des filtres
 function getFilteredData() {
     const sMin = parseFloat(document.getElementById('surface-min').value) || 0;
     const sMax = parseFloat(document.getElementById('surface-max').value) || Infinity;
@@ -185,13 +193,16 @@ function initCascadingFilters() {
 function updateFilterOptions() {
     const data = getFilteredData();
     populateSelect(selEpci, data, 'epci_nom', '- Tous les EPCI -');
+    
     let fComm = data;
     if (selEpci.value) fComm = fComm.filter(d => d.epci_nom === selEpci.value);
     populateSelect(selCommune, fComm, 'comm_nom', '- Toutes les communes -');
+    
     let fFriche = fComm;
     if (selCommune.value) fFriche = fFriche.filter(d => d.comm_nom === selCommune.value);
     populateSelect(selFriche, fFriche, 'site_nom', '- Toutes les friches -');
-    updateMap(true);
+    
+    updateMap(false);
 }
 
 function populateSelect(s, d, k, t) {
@@ -202,6 +213,7 @@ function populateSelect(s, d, k, t) {
     if ([...s.options].some(o => o.value === val)) s.value = val;
 }
 
+// UI Panneau
 const panel = document.getElementById('filters-panel');
 document.getElementById('toggle-filters').addEventListener('click', (e) => { e.stopPropagation(); panel.classList.add('open'); });
 document.getElementById('close-filters').addEventListener('click', () => panel.classList.remove('open'));
