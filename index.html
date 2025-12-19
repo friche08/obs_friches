@@ -3,65 +3,82 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Observatoire friches Ardennes</title>
+  <title>Observatoire des friches - DDT 08</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
-  <header class="custom-header">
-    <div class="brand-block">
-      <img src="logo_prefecture.svg" alt="Préfet des Ardennes" class="logo-marianne" />
-      <div class="brand-text">
-        <h1 class="main-title">Observatoire des friches</h1>
-        <div class="service-row">
-          <p class="mention-service">Direction départementale des Territoires</p>
-          <button id="toggle-filters" class="dsfr-button">☰ Filtres</button>
+
+  <header class="fr-header">
+    <div class="header-main">
+      <div class="header-logo-block">
+        <img src="logo_prefecture.svg" alt="Préfecture des Ardennes" class="logo-pref">
+        <div class="separator-v"></div>
+        <div class="header-titles">
+          <p class="title-main">Observatoire des friches</p>
+          <p class="title-sub">Direction départementale des Territoires</p>
         </div>
       </div>
+      <button id="toggle-filters" type="button">☰ Filtres</button>
     </div>
   </header>
 
-  <main><div id="map"></div></main>
+  <main>
+    <div id="map"></div>
+  </main>
 
   <aside id="filters-panel">
     <div class="panel-header">
-      <h2 class="filter-main-title">Filtres</h2>
-      <button id="close-filters">✕</button>
+      <h2>Filtres</h2>
+      <button id="close-filters" title="Fermer">✕</button>
     </div>
-    <div class="panel-scroll-content">
-      <fieldset class="filter-group-statut">
-        <legend>Statut de la friche</legend>
-        <div class="checkbox-list">
-          <label class="custom-checkbox"><input type="checkbox" value="friche potentielle"> Friche potentielle</label>
-          <label class="custom-checkbox"><input type="checkbox" value="friche sans projet" checked> Friche sans projet</label>
-          <label class="custom-checkbox"><input type="checkbox" value="friche avec projet" checked> Friche avec projet</label>
-          <label class="custom-checkbox"><input type="checkbox" value="friche reconvertie"> Friche reconvertie</label>
+
+    <div class="panel-content">
+        <fieldset class="filter-group status-fieldset">
+          <legend>Statut de la friche</legend>
+          <div class="checkbox-list">
+              <label><input type="checkbox" value="friche potentielle"> Friche potentielle</label>
+              <label><input type="checkbox" value="friche sans projet" checked> Friche sans projet</label>
+              <label><input type="checkbox" value="friche avec projet" checked> Friche avec projet</label>
+              <label><input type="checkbox" value="friche reconvertie"> Friche reconvertie</label>
+          </div>
+        </fieldset>
+
+        <div class="filter-group">
+          <label>Surface (m²)</label>
+          <div class="surface-inputs">
+            <input type="number" id="surface-min" value="0" step="1000" placeholder="Min">
+            <input type="number" id="surface-max" step="1000" placeholder="Max">
+          </div>
         </div>
-      </fieldset>
-      <div class="filter-group-dsfr">
-        <label class="label-bold">Surface (m²)</label>
-        <div class="surface-inputs-dsfr">
-          <input type="number" id="surface-min" value="0" step="1000">
-          <input type="number" id="surface-max" step="1000">
+
+        <div class="filter-group">
+          <label for="filter-epci">EPCI</label>
+          <select id="filter-epci">
+            <option value="">- Tous les EPCI -</option>
+          </select>
         </div>
-      </div>
-      <div class="filter-group-dsfr">
-        <label class="label-bold">EPCI</label>
-        <select id="filter-epci"><option value="">- Tous les EPCI -</option></select>
-      </div>
-      <div class="filter-group-dsfr">
-        <label class="label-bold">Commune</label>
-        <select id="filter-commune"><option value="">- Toutes les communes -</option></select>
-      </div>
-      <div class="filter-group-dsfr">
-        <label class="label-bold">Nom de la friche</label>
-        <select id="filter-friche"><option value="">- Toutes les friches -</option></select>
-      </div>
+
+        <div class="filter-group">
+          <label for="filter-commune">Commune</label>
+          <select id="filter-commune">
+            <option value="">- Toutes les communes -</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="filter-friche">Friche</label>
+          <select id="filter-friche">
+            <option value="">- Toutes les friches -</option>
+          </select>
+        </div>
     </div>
   </aside>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="script.js"></script>
+
 </body>
 </html>
