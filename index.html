@@ -7,39 +7,27 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
-
-  <header role="banner" class="custom-header">
-    <div class="header-content">
-      <div class="brand-block">
-        <div class="logo-marianne">
-          <img src="logo_prefecture.svg" alt="Logo Préfet des Ardennes" />
-        </div>
-        
-        <div class="brand-text">
-          <h1 class="main-title">Observatoire des friches</h1>
-          <div class="service-row">
-            <p class="mention-service">Direction départementale des Territoires</p>
-            <button id="toggle-filters" type="button" class="dsfr-button">
-              ☰ Filtres
-            </button>
-          </div>
+  <header class="custom-header">
+    <div class="brand-block">
+      <img src="logo_prefecture.svg" alt="Préfet des Ardennes" class="logo-marianne" />
+      <div class="brand-text">
+        <h1 class="main-title">Observatoire des friches</h1>
+        <div class="service-row">
+          <p class="mention-service">Direction départementale des Territoires</p>
+          <button id="toggle-filters" class="dsfr-button">☰ Filtres</button>
         </div>
       </div>
     </div>
   </header>
 
-  <main>
-    <div id="map"></div>
-  </main>
+  <main><div id="map"></div></main>
 
   <aside id="filters-panel">
     <div class="panel-header">
       <h2 class="filter-main-title">Filtres</h2>
-      <button id="close-filters" aria-label="Fermer">✕</button>
+      <button id="close-filters">✕</button>
     </div>
-
     <div class="panel-scroll-content">
       <fieldset class="filter-group-statut">
         <legend>Statut de la friche</legend>
@@ -50,40 +38,24 @@
           <label class="custom-checkbox"><input type="checkbox" value="friche reconvertie"> Friche reconvertie</label>
         </div>
       </fieldset>
-
       <div class="filter-group-dsfr">
         <label class="label-bold">Surface (m²)</label>
         <div class="surface-inputs-dsfr">
-          <div class="input-wrapper">
-            <span>Min</span>
-            <input type="number" id="surface-min" value="0" step="1000">
-          </div>
-          <div class="input-wrapper">
-            <span>Max</span>
-            <input type="number" id="surface-max" placeholder="Chargement..." step="1000">
-          </div>
+          <input type="number" id="surface-min" value="0" step="1000">
+          <input type="number" id="surface-max" step="1000">
         </div>
       </div>
-
       <div class="filter-group-dsfr">
-        <label class="label-bold" for="filter-epci">EPCI</label>
-        <select id="filter-epci" class="custom-select">
-          <option value="">- Tous les EPCI -</option>
-        </select>
+        <label class="label-bold">EPCI</label>
+        <select id="filter-epci"><option value="">- Tous les EPCI -</option></select>
       </div>
-
       <div class="filter-group-dsfr">
-        <label class="label-bold" for="filter-commune">Commune</label>
-        <select id="filter-commune" class="custom-select">
-          <option value="">- Toutes les communes -</option>
-        </select>
+        <label class="label-bold">Commune</label>
+        <select id="filter-commune"><option value="">- Toutes les communes -</option></select>
       </div>
-
       <div class="filter-group-dsfr">
-        <label class="label-bold" for="filter-friche">Nom de la friche</label>
-        <select id="filter-friche" class="custom-select">
-          <option value="">- Toutes les friches -</option>
-        </select>
+        <label class="label-bold">Nom de la friche</label>
+        <select id="filter-friche"><option value="">- Toutes les friches -</option></select>
       </div>
     </div>
   </aside>
@@ -91,6 +63,5 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="script.js"></script>
-
 </body>
 </html>
