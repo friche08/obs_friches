@@ -1,172 +1,79 @@
-/* ------------------------------------------------------------------------- */
-/* 1. Initialisation                                                         */
-/* ------------------------------------------------------------------------- */
-const bounds = L.latLngBounds([48, 1], [52, 8]);
+const map = L.map('map').setView([49.7, 4.7], 9);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-const map = L.map('map', {
-    minZoom: 8,
-    maxZoom: 18,
-    maxBounds: bounds,
-    maxBoundsViscosity: 1.0
-}).setView([49.7, 4.7], 9);
+let allData = [], markers = [];
+const selEpci = document.getElementById('filter-epci'), 
+      selCommune = document.getElementById('filter-commune'),
+      selFriche = document.getElementById('filter-friche');
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
-
-/* ------------------------------------------------------------------------- */
-/* 2. Variables Globales                                                     */
-/* ------------------------------------------------------------------------- */
-let allData = [];
-let markers = [];
-let markersDict = {};
-const selEpci = document.getElementById('filter-epci');
-const selCommune = document.getElementById('filter-commune');
-const selFriche = document.getElementById('filter-friche');
-
-/* ------------------------------------------------------------------------- */
-/* 3. Chargement des données                                                 */
-/* ------------------------------------------------------------------------- */
 Papa.parse('data.csv', {
-    download: true,
-    header: true,
-    skipEmptyLines: true,
+    download: true, header: true, skipEmptyLines: true,
     complete: function(results) {
         allData = results.data.filter(d => d.lat && d.lon);
-        console.log("Données chargées :", allData.length);
         initFilters();
     }
 });
 
-/* ------------------------------------------------------------------------- */
-/* 4. Logique des filtres                                                    */
-/* ------------------------------------------------------------------------- */
 function initFilters() {
-    // Remplissage EPCI
-    const epcis = [...new Set(allData.map(d => d.epci_nom))].filter(Boolean).sort();
-    epcis.forEach(e => {
-        const opt = document.createElement('option');
-        opt.value = e; opt.textContent = e;
-        selEpci.appendChild(opt);
-    });
+    const fillSelect = (select, field) => {
+        const vals = [...new Set(allData.map(d => d[field]))].filter(Boolean).sort();
+        vals.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v; opt.textContent = v; select.appendChild(opt);
+        });
+    };
+    fillSelect(selEpci, 'epci_nom');
+    fillSelect(selCommune, 'commune_nom');
+    fillSelect(selFriche, 'site_nom');
 
-    // Remplissage Communes
-    const communes = [...new Set(allData.map(d => d.commune_nom))].filter(Boolean).sort();
-    communes.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c; opt.textContent = c;
-        selCommune.appendChild(opt);
-    });
-
-    // Remplissage Friches
-    const friches = [...new Set(allData.map(d => d.site_nom))].filter(Boolean).sort();
-    friches.forEach(f => {
-        const opt = document.createElement('option');
-        opt.value = f; opt.textContent = f;
-        selFriche.appendChild(opt);
-    });
-
-    // Calcul Surface Max
     const surfaces = allData.map(d => parseFloat(d.site_surface_m2) || 0);
-    const maxVal = Math.max(...surfaces);
-    document.getElementById('surface-max').value = Math.ceil(maxVal / 1000) * 1000;
+    document.getElementById('surface-max').value = Math.ceil(Math.max(...surfaces) / 1000) * 1000;
 
-    // Écouteurs
-    [selEpci, selCommune, selFriche].forEach(s => s.addEventListener('change', updateMap));
-    
-    const inputs = document.querySelectorAll('#filters-panel input');
-    inputs.forEach(i => {
-        i.addEventListener('change', updateMap);
-        if (i.type === 'number') i.addEventListener('keyup', updateMap);
+    document.querySelectorAll('#filters-panel input, #filters-panel select').forEach(el => {
+        el.addEventListener('change', updateMap);
     });
-
     updateMap();
 }
 
 function updateMap() {
-    const epci = selEpci.value;
-    const commune = selCommune.value;
-    const friche = selFriche.value;
+    const epci = selEpci.value, com = selCommune.value, fri = selFriche.value;
     const minS = parseFloat(document.getElementById('surface-min').value) || 0;
     const maxS = parseFloat(document.getElementById('surface-max').value) || Infinity;
-    const checkedStatuts = Array.from(document.querySelectorAll('.checkbox-list input:checked')).map(c => c.value);
+    const checked = Array.from(document.querySelectorAll('.checkbox-list input:checked')).map(c => c.value);
 
     const filtered = allData.filter(d => {
         const s = parseFloat(d.site_surface_m2) || 0;
-        return (epci === '' || d.epci_nom === epci) &&
-               (commune === '' || d.commune_nom === commune) &&
-               (friche === '' || d.site_nom === friche) &&
-               (s >= minS && s <= maxS) &&
-               (checkedStatuts.includes(d.site_statut));
+        return (epci==='' || d.epci_nom===epci) && (com==='' || d.commune_nom===com) &&
+               (fri==='' || d.site_nom===fri) && (s>=minS && s<=maxS) && checked.includes(d.site_statut);
     });
-
     createMarkers(filtered);
 }
 
-/* ------------------------------------------------------------------------- */
-/* 5. Création des Marqueurs avec Animation (Original)                       */
-/* ------------------------------------------------------------------------- */
 function createMarkers(data) {
     markers.forEach(m => map.removeLayer(m));
     markers = [];
-    markersDict = {};
+    const colors = {'friche potentielle':'#7a5a3a','friche sans projet':'#e1000f','friche avec projet':'#000091','friche reconvertie':'#00ac8c'};
 
     data.forEach(row => {
-        const colorMap = {
-            'friche potentielle': '#7a5a3a',
-            'friche sans projet': '#e1000f',
-            'friche avec projet': '#000091',
-            'friche reconvertie': '#00ac8c'
-        };
-        const color = colorMap[row.site_statut] || '#333';
+        const color = colors[row.site_statut] || '#333';
+        // RE-INTEGRATION DE TON SVG ANIME ORIGINAL
+        const iconHtml = `<svg width="30" height="30" viewBox="0 0 30 30">
+            <circle cx="15" cy="15" r="10" fill="${color}" stroke="white" stroke-width="2">
+                <animate attributeName="r" values="10;13;10" dur="2s" repeatCount="indefinite" begin="mouseover" end="mouseout"/>
+            </circle>
+        </svg>`;
 
-        const customIcon = L.divIcon({
-            className: 'custom-div-icon',
-            html: `<svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="10" fill="${color}" stroke="white" stroke-width="2"/></svg>`,
-            iconSize: [30, 30],
-            iconAnchor: [15, 15]
-        });
+        const marker = L.marker([row.lat, row.lon], {
+            icon: L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize:[30,30], iconAnchor:[15,15] })
+        }).addTo(map);
 
-        const marker = L.marker([row.lat, row.lon], { icon: customIcon });
-
-        // Animation au survol
-        marker.on('mouseover', function (e) {
-            const icon = e.target.getElement().querySelector('svg');
-            if (icon) icon.style.transform = 'scale(1.5)';
-        });
-        marker.on('mouseout', function (e) {
-            const icon = e.target.getElement().querySelector('svg');
-            if (icon) icon.style.transform = 'scale(1.0)';
-        });
-
-        const imagePath = `photos/${row.site_id}.jpg`;
-        const surf = row.site_surface_m2 ? `${parseInt(row.site_surface_m2).toLocaleString()} m²` : 'Inconnue';
-
-        marker.bindPopup(`
-            <div class="popup-container">
-                <div class="popup-title"><strong>${row.site_nom || 'Sans nom'}</strong></div>
-                <div style="font-size:0.9em; color:#666;">${row.commune_nom}</div>
-                <hr style="border:0; border-top:1px solid #ccc; margin:8px 0;">
-                <img src="${imagePath}" style="width:100%; border-radius:4px;" onerror="this.style.display='none'">
-                <div style="margin-top:10px; line-height:1.4;">
-                    <div><strong>Statut :</strong> ${row.site_statut}</div>
-                    <div><strong>Surface :</strong> ${surf}</div>
-                </div>
-            </div>`, { minWidth: 280 });
-
-        marker.addTo(map);
+        marker.bindPopup(`<strong>${row.site_nom}</strong><br>${row.commune_nom}<br>Surface: ${row.site_surface_m2} m²`);
         markers.push(marker);
-        if (row.site_id) markersDict[row.site_id] = marker;
     });
 }
 
-/* ------------------------------------------------------------------------- */
-/* 6. UI Panneau                                                             */
-/* ------------------------------------------------------------------------- */
+// UI Panneau
 const panel = document.getElementById('filters-panel');
-document.getElementById('toggle-filters')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    panel.classList.add('open');
-});
-document.getElementById('close-filters')?.addEventListener('click', () => panel.classList.remove('open'));
-map.on('click', () => panel.classList.remove('open'));
+document.getElementById('toggle-filters').onclick = (e) => { e.stopPropagation(); panel.classList.add('open'); };
+document.getElementById('close-filters').onclick = () => panel.classList.remove('open');
+map.onclick = () => panel.classList.remove('open');
