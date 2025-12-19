@@ -1,139 +1,137 @@
-/* Base */
+/* ------------------------------------------------------------------------- */
+/* 1. DECLARATION DES POLICES MARIANNE                                       */
+/* ------------------------------------------------------------------------- */
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Thin.woff2') format('woff2'); font-weight: 100; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Thin_Italic.woff2') format('woff2'); font-weight: 100; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Light.woff2') format('woff2'); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Light_Italic.woff2') format('woff2'); font-weight: 300; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Regular_Italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Medium.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Medium_Italic.woff2') format('woff2'); font-weight: 500; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Bold_Italic.woff2') format('woff2'); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-ExtraBold.woff2') format('woff2'); font-weight: 800; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-ExtraBold_Italic.woff2') format('woff2'); font-weight: 800; font-style: italic; font-display: swap; }
+
+/* ------------------------------------------------------------------------- */
+/* 2. VARIABLES DE DESIGN (COULEURS ÉTAT)                                    */
+/* ------------------------------------------------------------------------- */
+:root {
+  --blue-france: #000091;
+  --red-marianne: #e1000f;
+  --text-title: #161616;
+  --text-default: #3a3a3a;
+  --grey-border: #cecece;
+  --grey-background: #f6f6f6;
+  --white: #ffffff;
+  --shadow: 0 2px 6px rgba(0, 0, 145, 0.1);
+}
+
+/* ------------------------------------------------------------------------- */
+/* 3. BASE & LAYOUT                                                          */
+/* ------------------------------------------------------------------------- */
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: #f4f4f4; /* Pour voir les bords de la carte */
+  padding: 0;
+  font-family: 'Marianne', sans-serif;
+  color: var(--text-default);
+  background-color: var(--grey-background);
+  overflow: hidden; /* Empêche le scroll du body au profit de la carte/panneau */
 }
 
-.header-container {
-  padding: 10px;
-  max-width: 90%;
-  margin: 0 auto;
-}
-
-h1 {
-  margin: 0 0 10px 0;
-  font-size: 1.5rem;
-}
-
-/* Bouton filtres */
-#toggle-filters {
-  padding: 8px 12px;
-  font-size: 1rem;
-  background: #333;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-/* Carte : 90% de largeur pour le scroll mobile */
 #map {
-  width: 90%;
-  height: 80vh;
-  margin: 0 auto; /* Centré horizontalement */
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  /* Important pour le tactile : */
-  touch-action: pan-y; 
+  width: 100%;
+  height: calc(100vh - 100px); /* Ajusté pour le header */
+  z-index: 1;
 }
 
-/* PANNEAU FILTRES — CÔTÉ DROIT */
-#filters-panel {
-  position: fixed;
-  top: 0;
-  right: 0; /* Collé à droite */
-  left: auto; /* On annule le left */
-
-  width: 300px;
-  max-width: 85%;
-  height: 100%;
-
-  background: #fff;
-  border-left: 1px solid #ccc; /* Bordure à gauche maintenant */
-  box-shadow: -2px 0 5px rgba(0,0,0,0.1);
-
-  padding: 15px;
-  box-sizing: border-box;
-  overflow-y: auto;
-
-  /* Caché vers la droite */
-  transform: translateX(100%);
-  transition: transform 0.3s ease;
-  z-index: 2000;
+/* ------------------------------------------------------------------------- */
+/* 4. HEADER CUSTOM (STYLE DSFR HYBRIDE)                                     */
+/* ------------------------------------------------------------------------- */
+.custom-header {
+  background: var(--white);
+  padding: 1rem 1.5rem;
+  box-shadow: var(--shadow);
+  z-index: 1000;
+  position: relative;
 }
 
-#filters-panel.open {
-  transform: translateX(0);
-}
-
-.panel-header {
+.header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  max-width: 100%;
 }
-.panel-header h2 { margin: 0; }
-#close-filters {
-  background: none;
+
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.logo-marianne img {
+  height: 60px; /* Taille standard pour logo préfecture */
+  width: auto;
+}
+
+.brand-text {
+  border-left: 1px solid var(--grey-border);
+  padding-left: 1.5rem;
+}
+
+.mention-prefecture {
+  font-weight: 800; /* ExtraBold */
+  font-size: 0.9rem;
+  line-height: 1.1;
+  margin: 0;
+  text-transform: uppercase;
+  color: var(--text-title);
+}
+
+.mention-service {
+  font-weight: 700; /* Bold */
+  font-size: 0.8rem;
+  margin: 0.2rem 0 0 0;
+  color: var(--text-default);
+}
+
+.header-title-container {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.main-title {
+  font-weight: 800;
+  font-size: 1.4rem;
+  margin: 0;
+  color: var(--blue-france);
+}
+
+/* Bouton Filtres Style DSFR */
+.dsfr-button {
+  background-color: var(--blue-france);
+  color: var(--white);
   border: none;
-  font-size: 1.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  font-family: 'Marianne', sans-serif;
   cursor: pointer;
+  transition: background 0.2s;
 }
 
-/* Styles filtres */
-.filter-group { margin-bottom: 15px; }
-.filter-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem;}
-.filter-group select, .filter-group input[type="number"] {
-  width: 100%; padding: 8px; box-sizing: border-box;
-  border: 1px solid #ddd; border-radius: 4px;
-}
-.surface-inputs { display: flex; gap: 5px; }
-fieldset.filter-group { border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: #fafafa;}
-fieldset label { font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 8px;}
-
-/* CSS pour les pictos SVG (optionnel car géré par le SVG lui-même) */
-.picto {
-  background: transparent;
-  border: none;
+.dsfr-button:hover {
+  background-color: #1212ff;
 }
 
-/* 1. On force la largeur du contenu du popup Leaflet */
-.leaflet-popup-content {
-    /* La largeur visible sera de 300px */
-    width: 300px !important; 
-    
-    /* Optionnel : supprimer les marges par défaut de Leaflet pour gagner de la place */
-    /* margin: 10px !important; */
-}
-
-/* 2. Style de l'image */
-.popup-img {
-    width: 100%;       /* Prend toute la largeur disponible (300px) */
-    height: auto;      /* Garde les proportions */
-    display: block;    /* Évite les petits espaces blancs sous l'image */
-    border-radius: 4px;
-    margin-bottom: 8px;
-    
-    /* Astuce : si l'image fait 600px réels, width:100% la forcera à 300px 
-       dans ce conteneur -> Effet Retina réussi */
-}
-
-/* 3. Conteneur de l'image (pour gérer l'erreur de chargement proprement) */
-.img-container {
-    min-height: 0; /* Évite des bugs de hauteur sur certains navigateurs */
-}
-
-/* 4. Gestion du Scroll (Ascenseur) */
-.leaflet-popup-content-wrapper {
-    /* Si le contenu est très long, on peut limiter la hauteur globale du popup */
-    max-height: 80vh; /* 80% de la hauteur de l'écran */
-    overflow-y: auto; /* Affiche l'ascenseur si nécessaire */
-}
-
-/* Petit raffinement pour le texte sous l'image */
-.popup-content-text {
-    font-size: 0.9rem;
-    line-height: 1.4;
-}
+/* ------------------------------------------------------------------------- */
+/* 5. PANNEAU DE FILTRES                                                     */
+/* ------------------------------------------------------------------------- */
+#filters-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 350px;
