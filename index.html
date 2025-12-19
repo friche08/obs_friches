@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
 
   <header class="fr-header">
@@ -33,7 +32,7 @@
   <aside id="filters-panel">
     <div class="panel-header">
       <h2>Filtres</h2>
-      <button id="close-filters" title="Fermer">✕</button>
+      <button id="close-filters">✕</button>
     </div>
 
     <div class="panel-content">
@@ -50,30 +49,22 @@
         <div class="filter-group">
           <label>Surface (m²)</label>
           <div class="surface-inputs">
-            <input type="number" id="surface-min" value="0" step="1000" placeholder="Min">
-            <input type="number" id="surface-max" step="1000" placeholder="Max">
+            <input type="number" id="surface-min" value="0" step="1000">
+            <input type="number" id="surface-max" step="1000">
           </div>
         </div>
 
         <div class="filter-group">
           <label for="filter-epci">EPCI</label>
-          <select id="filter-epci">
-            <option value="">- Tous les EPCI -</option>
-          </select>
+          <select id="filter-epci"><option value="">- Tous les EPCI -</option></select>
         </div>
-
         <div class="filter-group">
           <label for="filter-commune">Commune</label>
-          <select id="filter-commune">
-            <option value="">- Toutes les communes -</option>
-          </select>
+          <select id="filter-commune"><option value="">- Toutes les communes -</option></select>
         </div>
-
         <div class="filter-group">
           <label for="filter-friche">Friche</label>
-          <select id="filter-friche">
-            <option value="">- Toutes les friches -</option>
-          </select>
+          <select id="filter-friche"><option value="">- Toutes les friches -</option></select>
         </div>
     </div>
   </aside>
@@ -81,6 +72,5 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="script.js"></script>
-
 </body>
 </html>
