@@ -24,27 +24,53 @@ Papa.parse('data.csv', {
     header: true,
     skipEmptyLines: true,
     complete: function(results) {
+        // Nettoyage des données pour être sûr d'avoir des chiffres
         allData = results.data.filter(d => d.lat && d.lon);
+        console.log("Données chargées :", allData.length);
         initFilters();
     }
 });
 
 /* 4. Logique des filtres */
 function initFilters() {
+    if (!allData.length) return;
+
     // Remplissage EPCI
     const epcis = [...new Set(allData.map(d => d.epci_nom))].filter(Boolean).sort();
+    selEpci.innerHTML = '<option value="">- Tous les EPCI -</option>';
     epcis.forEach(e => {
         const opt = document.createElement('option');
         opt.value = e; opt.textContent = e;
         selEpci.appendChild(opt);
     });
 
-    // Calcul Surface Max
+    // Remplissage Communes
+    const communes = [...new Set(allData.map(d => d.commune_nom))].filter(Boolean).sort();
+    selCommune.innerHTML = '<option value="">- Toutes les communes -</option>';
+    communes.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        selCommune.appendChild(opt);
+    });
+
+    // Remplissage Friches
+    const friches = [...new Set(allData.map(d => d.site_nom))].filter(Boolean).sort();
+    selFriche.innerHTML = '<option value="">- Toutes les friches -</option>';
+    friches.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f; opt.textContent = f;
+        selFriche.appendChild(opt);
+    });
+
+    // Calcul Surface Max automatique
     const surfaces = allData.map(d => parseFloat(d.site_surface_m2) || 0);
     const maxVal = Math.max(...surfaces);
-    document.getElementById('surface-max').value = Math.ceil(maxVal / 1000) * 1000;
+    const surfaceMaxInput = document.getElementById('surface-max');
+    if (surfaceMaxInput) {
+        surfaceMaxInput.value = Math.ceil(maxVal / 1000) * 1000;
+    }
 
-    // Écouteurs
+    // Écouteurs d'événements
     [selEpci, selCommune, selFriche].forEach(s => s.addEventListener('change', updateMap));
     
     const inputs = document.querySelectorAll('#filters-panel input');
@@ -53,20 +79,29 @@ function initFilters() {
         if (i.type === 'number') i.addEventListener('keyup', updateMap);
     });
 
-    updateMap(); // Premier affichage
+    updateMap(); // Affichage initial après remplissage
 }
 
 function updateMap() {
     const epci = selEpci.value;
+    const commune = selCommune.value;
+    const friche = selFriche.value;
     const minS = parseFloat(document.getElementById('surface-min').value) || 0;
     const maxS = parseFloat(document.getElementById('surface-max').value) || Infinity;
-    const checkedStatuts = Array.from(document.querySelectorAll('.checkbox-list input:checked')).map(c => c.value);
+    
+    // Récupérer les statuts cochés
+    const checkedStatuts = Array.from(document.querySelectorAll('.checkbox-list input:checked'))
+                                .map(c => c.value);
 
     const filtered = allData.filter(d => {
         const s = parseFloat(d.site_surface_m2) || 0;
-        return (epci === '' || d.epci_nom === epci) &&
-               (s >= minS && s <= maxS) &&
-               (checkedStatuts.includes(d.site_statut));
+        const matchStatut = checkedStatuts.includes(d.site_statut);
+        const matchEpci = (epci === '' || d.epci_nom === epci);
+        const matchCommune = (commune === '' || d.commune_nom === commune);
+        const matchFriche = (friche === '' || d.site_nom === friche);
+        const matchSurface = (s >= minS && s <= maxS);
+        
+        return matchStatut && matchEpci && matchCommune && matchFriche && matchSurface;
     });
 
     createMarkers(filtered);
@@ -74,6 +109,7 @@ function updateMap() {
 
 /* 5. Marqueurs & Popups */
 function createMarkers(data) {
+    // Nettoyer les anciens marqueurs
     markers.forEach(m => map.removeLayer(m));
     markers = [];
 
@@ -85,10 +121,12 @@ function createMarkers(data) {
             'friche reconvertie': '#00ac8c'
         };
         
+        const color = colorMap[row.site_statut] || '#333';
+
         const marker = L.marker([row.lat, row.lon], {
             icon: L.divIcon({
                 className: 'custom-icon',
-                html: `<svg width="30" height="30"><circle cx="15" cy="15" r="10" fill="${colorMap[row.site_statut] || '#333'}" stroke="white" stroke-width="2"/></svg>`,
+                html: `<svg width="30" height="30"><circle cx="15" cy="15" r="10" fill="${color}" stroke="white" stroke-width="2"/></svg>`,
                 iconSize: [30, 30], iconAnchor: [15, 15]
             })
         });
