@@ -1,31 +1,238 @@
-@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Regular.woff2') format('woff2'); font-weight: 400; }
-@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Bold.woff2') format('woff2'); font-weight: 700; }
+/* Importation de la police Marianne (assure-toi que les fichiers sont dans /fonts/) */
+@font-face {
+    font-family: 'Marianne';
+    src: url('fonts/Marianne-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'Marianne';
+    src: url('fonts/Marianne-Bold.woff2') format('woff2');
+    font-weight: bold;
+    font-style: normal;
+}
 
-:root { --blue-france: #000091; --grey-border: #cecece; --white: #ffffff; }
+:root {
+    --blue-marianne: #000091;
+    --text-grey: #161616;
+    --light-grey: #eeeeee;
+    --border-grey: #e5e5e5;
+}
 
-body { margin: 0; font-family: 'Marianne', Arial, sans-serif; background: #f6f6f6; }
+body {
+    margin: 0;
+    font-family: 'Marianne', Arial, sans-serif;
+    color: var(--text-grey);
+    background-color: #fff;
+}
 
-#map { width: 90%; height: 80vh; margin: 20px auto; border: 1px solid var(--grey-border); z-index: 1; }
+/* Header DSFR Style */
+.fr-header {
+    background: #fff;
+    border-bottom: 1px solid var(--border-grey);
+    padding: 10px 0;
+}
 
-.custom-header { background: var(--white); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--grey-border); }
-.brand-block { display: flex; align-items: center; gap: 1.5rem; }
-.logo-marianne { height: 70px; }
-.brand-text { border-left: 1px solid var(--grey-border); padding-left: 1.5rem; }
-.main-title { font-weight: 800; font-size: 1.3rem; margin: 0; color: var(--blue-france); }
-.service-row { display: flex; align-items: center; gap: 1rem; }
-.dsfr-button { background: var(--blue-france); color: #fff; border: none; padding: 4px 10px; cursor: pointer; font-family: 'Marianne'; }
+.header-main {
+    max-width: 90%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-#filters-panel { position: fixed; top: 0; right: 0; width: 350px; height: 100%; background: #fff; z-index: 2000; transform: translateX(100%); transition: 0.3s; display: flex; flex-direction: column; box-shadow: -2px 0 10px rgba(0,0,0,0.1); }
-#filters-panel.open { transform: translateX(0); }
-.panel-header { padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
-#close-filters { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+.header-logo-block {
+    display: flex;
+    align-items: center;
+}
 
-.filter-group-statut { border: 1px solid var(--grey-border); padding: 1rem; margin: 0 1.5rem 1.5rem; }
-.filter-group-statut legend { font-weight: 700; margin-left: -5px; padding: 0 5px; }
-.checkbox-list { display: flex; flex-direction: column; gap: 8px; font-size: 0.95rem; }
-.filter-group-dsfr { padding: 0 1.5rem 1.25rem; }
-.label-bold { font-weight: 700; margin-bottom: 0.5rem; display: block; }
-.custom-select, .surface-inputs-dsfr input { width: 100%; padding: 8px; border: none; border-bottom: 2px solid var(--grey-border); background: #f6f6f6; font-family: 'Marianne'; }
-.surface-inputs-dsfr { display: flex; gap: 10px; }
+.logo-pref {
+    height: 70px;
+    width: auto;
+}
 
-.leaflet-popup-content, .leaflet-popup-content * { font-family: 'Marianne', sans-serif !important; }
+.separator-v {
+    width: 1px;
+    height: 50px;
+    background-color: var(--border-grey);
+    margin: 0 20px;
+}
+
+.title-main {
+    margin: 0;
+    color: var(--blue-marianne);
+    font-weight: bold;
+    font-size: 1.4rem;
+    text-transform: uppercase;
+}
+
+.title-sub {
+    margin: 0;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+/* Bouton Filtres */
+#toggle-filters {
+    background-color: var(--blue-marianne);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    font-family: 'Marianne';
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+/* Carte */
+#map {
+    width: 90%;
+    height: 75vh;
+    margin: 20px auto;
+    border: 1px solid var(--border-grey);
+    z-index: 1;
+}
+
+/* Panneau Latéral */
+#filters-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 350px;
+    max-width: 100%;
+    height: 100%;
+    background: #fff;
+    box-shadow: -4px 0 12px rgba(0,0,0,0.1);
+    z-index: 2000;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+
+#filters-panel.open {
+    transform: translateX(0);
+}
+
+.panel-header {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+#close-filters {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #000;
+}
+
+.panel-content {
+    padding: 0 20px 20px 20px;
+    overflow-y: auto;
+}
+
+/* Filtres UI */
+.filter-group {
+    margin-bottom: 20px;
+}
+
+.filter-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.status-fieldset {
+    border: 1px solid var(--border-grey);
+    background-color: #f6f6f6;
+    padding: 15px;
+    margin: 0 0 20px 0;
+}
+
+.status-fieldset legend {
+    font-weight: bold;
+    font-size: 0.9rem;
+    padding: 0 5px;
+}
+
+.checkbox-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.checkbox-list label {
+    font-weight: normal;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+select, input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-grey);
+    font-family: 'Marianne';
+    font-size: 0.9rem;
+}
+
+.surface-inputs {
+    display: flex;
+    gap: 10px;
+}
+
+/* Popups Leaflet */
+.leaflet-popup-content-wrapper {
+    border-radius: 0;
+    font-family: 'Marianne', sans-serif !important;
+}
+
+.leaflet-popup-content {
+    width: 280px !important;
+    font-family: 'Marianne', sans-serif !important;
+}
+
+.leaflet-popup-content h3 {
+    margin: 0 0 2px 0;
+    font-weight: bold;
+    color: var(--blue-marianne);
+}
+
+.popup-commune {
+    font-style: italic;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.popup-sep {
+    border: 0;
+    border-top: 1px solid var(--border-grey);
+    margin: 10px 0;
+}
+
+.popup-img {
+    width: 100%;
+    height: auto;
+    border-radius: 2px;
+    margin-bottom: 10px;
+}
+
+.popup-details {
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.picto { background: transparent; border: none; }
