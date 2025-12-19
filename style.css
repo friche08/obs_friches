@@ -1,28 +1,25 @@
+/* Polices Marianne */
 @font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Light.woff2') format('woff2'); font-weight: 300; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Marianne'; src: url('Fonts/Marianne-Regular_Italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
 
+/* Force Marianne partout sur PC et Mobile */
 html, body, button, select, input, .leaflet-container {
     font-family: 'Marianne', Arial, sans-serif !important;
 }
 
 body { margin: 0; color: #161616; overflow-x: hidden; }
 
+/* Header */
 .fr-header {
-    background: #fff;
-    border-bottom: 1px solid #e5e5e5;
-    padding: 10px 0;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    position: relative;
-    z-index: 1001;
+    background: #fff; border-bottom: 1px solid #e5e5e5; padding: 10px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08); position: relative; z-index: 1001;
 }
-
 .header-main { max-width: 90%; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
 .header-logo-block { display: flex; align-items: center; }
 .logo-pref { height: 70px; width: auto; }
 .separator-v { width: 1px; height: 50px; background-color: #e5e5e5; margin: 0 15px; }
-
 .title-main { margin: 0; color: #000091; font-weight: 700; font-size: 1.3rem; line-height: 1.2; }
 .title-sub { margin: 0; font-weight: 700; font-size: 0.85rem; }
 
@@ -31,14 +28,24 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
     font-weight: 700; cursor: pointer; border-radius: 4px;
 }
 
+/* CARTE : Hauteur adaptative */
+#map { 
+    width: 90%; 
+    height: 90vh; /* 90% sur PC */
+    margin: 0 auto; 
+    border: 1px solid #e5e5e5; 
+    z-index: 1; 
+}
+
+/* Responsive Mobile */
 @media (max-width: 768px) {
     .btn-text { display: none; }
     .separator-v { margin: 0 8px; }
     .title-main { font-size: 1rem; }
+    #map { height: 75vh; } /* 75% sur Mobile */
 }
 
-#map { width: 90%; height: 75vh; margin: 0 auto; border: 1px solid #e5e5e5; z-index: 1; }
-
+/* Panneau de filtres */
 #filters-panel {
     position: fixed; top: 0; right: 0; width: 350px; max-width: 85%; height: 100%;
     background: #fff; box-shadow: -4px 0 12px rgba(0,0,0,0.1);
@@ -61,15 +68,12 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid #e5e5e5; box-sizing: border-box; }
 .surface-inputs { display: flex; gap: 10px; }
 
-/* Popup styles */
+/* Popups */
 .popup-header-site { font-weight: 700; font-size: 1.1rem; color: #000091; margin-bottom: 2px; }
 .popup-commune { font-style: italic; font-size: 0.9rem; color: #666; display: block; margin-bottom: 8px; }
 .popup-sep { border: 0; border-top: 1px solid #eee; margin: 8px 0; }
-
-/* Conteneur photo pour disparition totale */
 .img-container { width: 100%; margin: 8px 0; display: block; }
 .popup-img { width: 100%; height: auto; border-radius: 2px; display: block; }
-
 .popup-details div { margin-bottom: 4px; font-size: 0.9rem; }
 
 .picto { background: transparent; border: none; }
