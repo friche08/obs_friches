@@ -1,14 +1,66 @@
 const bounds = L.latLngBounds([48, 1], [52, 8]);
 const ZOOM_THRESHOLD = 13;
+const CADASTRE_ZOOM_THRESHOLD = 15; // Seuil d'affichage du cadastre
+
+// Définition des fonds de carte
+const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+});
+
+const osmHot = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap / HOT'
+});
+
+const ignCarte = L.tileLayer('https://data.geopf.ign.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&FORMAT=image/png&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}', {
+    attribution: '&copy; IGN'
+});
+
+const ignOrtho = L.tileLayer('https://data.geopf.ign.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&FORMAT=image/jpeg&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}', {
+    attribution: '&copy; IGN'
+});
+
+// Définition de la surcouche Cadastre
+const cadastreLayer = L.tileLayer('https://tms.cadastre.data.gouv.fr/tiles/parcelles/{z}/{x}/{y}.png', {
+    maxZoom: 20,
+    attribution: '&copy; Cadastre Etalab'
+});
+
+let isCadastreChecked = false; // État de la case à cocher cadastre
 
 const map = L.map('map', {
     minZoom: 8, maxZoom: 18,
-    maxBounds: bounds, maxBoundsViscosity: 1.0
+    maxBounds: bounds, maxBoundsViscosity: 1.0,
+    layers: [osmHot] // Fond actif par défaut
 }).setView([49.7, 4.7], 9);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap'
-}).addTo(map);
+// Contrôle des couches
+const baseMaps = {
+    "OSM HOT": osmHot,
+    "OSM Standard": osmStandard,
+    "IGN Carte": ignCarte,
+    "IGN Ortho": ignOrtho
+};
+
+const overlayMaps = {
+    "Cadastre": cadastreLayer
+};
+
+L.control.layers(baseMaps, overlayMaps, { collapsed: true }).addTo(map);
+
+// Gestion de l'activation manuelle du cadastre
+map.on('overlayadd', function(e) {
+    if (e.layer === cadastreLayer) {
+        isCadastreChecked = true;
+        updateMap();
+    }
+});
+
+map.on('overlayremove', function(e) {
+    if (e.layer === cadastreLayer) {
+        isCadastreChecked = false;
+        updateMap();
+    }
+});
 
 let allData = [];
 let markers = [];
@@ -121,7 +173,16 @@ function fitMap() {
 
 function updateMap(shouldFit = false) {
     const baseFiltered = getFilteredData();
-    const showPolygons = map.getZoom() >= ZOOM_THRESHOLD;
+    const currentZoom = map.getZoom();
+    const showPolygons = currentZoom >= ZOOM_THRESHOLD;
+    
+    // Gestion auto du cadastre
+    if (isCadastreChecked && currentZoom >= CADASTRE_ZOOM_THRESHOLD) {
+        if (!map.hasLayer(cadastreLayer)) cadastreLayer.addTo(map);
+    } else {
+        if (map.hasLayer(cadastreLayer)) map.removeLayer(cadastreLayer);
+    }
+
     polygonsLayerGroup.clearLayers();
 
     markers.forEach(item => {
