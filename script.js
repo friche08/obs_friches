@@ -15,12 +15,12 @@ const ignCarte = L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=Ge
     attribution: '&copy; IGN'
 });
 
-const ignOrtho = L.tileLayer('https://data.geopf.ign.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image%2Fjpeg', {
+const ignOrtho = L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image%2Fjpeg', {
     attribution: '&copy; IGN'
 });
 
 // Définition du Cadastre (Surcouche)
-const cadastreLayer = L.tileLayer('https://data.geopf.ign.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=CADASTRALPARCELS.PARCELS&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image%2Fpng', {
+const cadastreLayer = L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=CADASTRALPARCELS.PARCELS&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image%2Fpng', {
     minZoom: CADASTRE_ZOOM_THRESHOLD,
     maxZoom: 19,
     opacity: 0.7,
@@ -283,6 +283,7 @@ const panel = document.getElementById('filters-panel');
 document.getElementById('toggle-filters').addEventListener('click', (e) => { e.stopPropagation(); panel.classList.add('open'); });
 document.getElementById('close-filters').addEventListener('click', () => panel.classList.remove('open'));
 map.on('click', () => panel.classList.remove('open'));
+
 
 
 
