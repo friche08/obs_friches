@@ -4,11 +4,11 @@ const CADASTRE_ZOOM_THRESHOLD = 15;
 
 // Définition des fonds de carte avec les URLs officielles Géoplateforme
 const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap'
+    attribution: '&copy; contributeurs OpenStreetMap'
 });
 
 const osmHot = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap / HOT'
+    attribution: '&copy; contributeurs OpenStreetMap'
 });
 
 const ignCarte = L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image%2Fpng', {
@@ -24,7 +24,7 @@ const cadastreLayer = L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUE
     minZoom: CADASTRE_ZOOM_THRESHOLD,
     maxZoom: 19,
     opacity: 0.7,
-    attribution: '&copy; IGN / Cadastre'
+    attribution: '&copy; IGN-DGFiP'
 });
 
 let isCadastreChecked = false; // Mémorise si l'utilisateur a coché la case
@@ -37,10 +37,10 @@ const map = L.map('map', {
 
 // Contrôle des couches
 const baseMaps = {
-    "OSM HOT": osmHot,
-    "OSM Standard": osmStandard,
-    "IGN Carte": ignCarte,
-    "IGN Ortho": ignOrtho
+    "OpenStreetMap Humanitarian": osmHot,
+    "OpenStreetMap Standard": osmStandard,
+    "Plan IGN": ignCarte,
+    "Vue aérienne (BD Ortho®)": ignOrtho
 };
 
 const overlayMaps = {
@@ -283,6 +283,7 @@ const panel = document.getElementById('filters-panel');
 document.getElementById('toggle-filters').addEventListener('click', (e) => { e.stopPropagation(); panel.classList.add('open'); });
 document.getElementById('close-filters').addEventListener('click', () => panel.classList.remove('open'));
 map.on('click', () => panel.classList.remove('open'));
+
 
 
 
