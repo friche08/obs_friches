@@ -47,7 +47,7 @@ const overlayMaps = {
     "Cadastre": cadastreLayer
 };
 
-L.control.layers(baseMaps, overlayMaps, { collapsed: true }).addTo(map);
+L.control.layers(baseMaps, overlayMaps, { collapsed: true, position: 'bottomleft' }).addTo(map);
 
 // Détection de l'action utilisateur sur le contrôle de couches
 map.on('overlayadd', function(e) {
@@ -283,6 +283,7 @@ const panel = document.getElementById('filters-panel');
 document.getElementById('toggle-filters').addEventListener('click', (e) => { e.stopPropagation(); panel.classList.add('open'); });
 document.getElementById('close-filters').addEventListener('click', () => panel.classList.remove('open'));
 map.on('click', () => panel.classList.remove('open'));
+
 
 
 
