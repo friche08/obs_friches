@@ -20,18 +20,18 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 .header-logo-block { display: flex; align-items: center; }
 /* Style pour PC (par défaut) */
 .logo-pref { 
-    width: 70px;  /* Largeur sur PC */
+    width: 80px;  /* Largeur sur PC */
     height: auto; 
 }
 
 /* Style pour Mobile */
-@media (max-width: 767px) {
+@media (max-width: 768px) {
     .logo-pref { 
         width: 60px; /* Largeur réduite sur Mobile */
     }
 }
 .separator-v { width: 1px; height: 50px; background-color: #e5e5e5; margin: 0 15px; }
-.title-main { margin: 0; color: #000091; font-weight: 700; font-size: 1.4rem; line-height: 1.2; }
+.title-main { margin: 0; color: #000091; font-weight: 700; font-size: 1.6rem; line-height: 1.2; }
 .title-sub { margin: 0; font-weight: 300; font-size: 0.75rem; }
 
 #toggle-filters {
@@ -88,5 +88,6 @@ select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid #e5
 .popup-details div { margin-bottom: 4px; font-size: 0.9rem; }
 
 .picto { background: transparent; border: none; }
+
 
 
