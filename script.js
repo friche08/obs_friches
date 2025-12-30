@@ -1,14 +1,81 @@
 const bounds = L.latLngBounds([48, 1], [52, 8]);
 const ZOOM_THRESHOLD = 13;
+const CADASTRE_ZOOM_MIN = 14;
 
 const map = L.map('map', {
     minZoom: 8, maxZoom: 18,
     maxBounds: bounds, maxBoundsViscosity: 1.0
 }).setView([49.7, 4.7], 9);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap'
-}).addTo(map);
+// =======================
+// FONDS DE CARTE
+// =======================
+
+// OSM standard
+const osmStandard = L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  { attribution: '&copy; OpenStreetMap', maxZoom: 19 }
+);
+
+// OSM Humanitaire
+const osmHumanitarian = L.tileLayer(
+  'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+  { attribution: '&copy; OpenStreetMap – HOT', maxZoom: 19 }
+);
+
+// IGN – Carte Facile
+const IGN_WMTS = 'https://data.geopf.fr/wmts';
+
+const ignPlan = L.tileLayer(
+  IGN_WMTS +
+  '?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
+  '&LAYER=GEOGRAPHICALGRIDSYSTEMS.MAPS' +
+  '&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/png' +
+  '&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}',
+  { attribution: '© IGN', maxZoom: 18 }
+);
+
+const ignOrtho = L.tileLayer(
+  IGN_WMTS +
+  '?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
+  '&LAYER=ORTHOIMAGERY.ORTHOPHOTOS' +
+  '&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/jpeg' +
+  '&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}',
+  { attribution: '© IGN', maxZoom: 19 }
+);
+
+// Fond actif au chargement
+osmStandard.addTo(map);
+
+// =======================
+// SURCOUCHE CADASTRE
+// =======================
+
+const cadastre = L.tileLayer(
+  IGN_WMTS +
+  '?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
+  '&LAYER=CADASTRALPARCELS.PARCELS' +
+  '&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/png' +
+  '&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}',
+  { attribution: '© DGFiP / IGN', maxZoom: 20, opacity: 0.7 }
+);
+
+// =======================
+// CONTROLE DES COUCHES
+// =======================
+
+L.control.layers(
+  {
+    "OSM standard": osmStandard,
+    "OSM humanitaire": osmHumanitarian,
+    "IGN – Carte": ignPlan,
+    "IGN – Vue aérienne": ignOrtho
+  },
+  {
+    "Cadastre": cadastre
+  },
+  { collapsed: true }
+).addTo(map);
 
 let allData = [];
 let markers = [];
@@ -23,7 +90,12 @@ const selFriche = document.getElementById('filter-friche');
 
 // 1. Marqueurs et Couleurs
 function getColorForStatus(s) {
-    const colors = { "friche potentielle": "#aea397", "friche sans projet": "#745b47", "friche avec projet": "#2b7756", "friche reconvertie": "#99c221" };
+    const colors = {
+        "friche potentielle": "#aea397",
+        "friche sans projet": "#745b47",
+        "friche avec projet": "#2b7756",
+        "friche reconvertie": "#99c221"
+    };
     return colors[s] || "#777";
 }
 
@@ -56,7 +128,7 @@ Papa.parse('data.csv', {
         addMarkers(allData);
         initCascadingFilters();
         
-        updateFilterOptions(); // Remplit les listes et ajuste la vue au démarrage
+        updateFilterOptions();
     }
 });
 
@@ -68,14 +140,14 @@ function addMarkers(rows) {
         if (isNaN(lat)) return;
 
         const marker = L.marker([lat, lon], {
-            icon: L.divIcon({ 
-                className: "picto", 
-                html: createSvgPicto(getColorForStatus(row.site_statut)), 
-                iconSize: [19.2, 19.2], 
-                iconAnchor: [9.6, 9.6], 
-                popupAnchor: [0, -10] 
+            icon: L.divIcon({
+                className: "picto",
+                html: createSvgPicto(getColorForStatus(row.site_statut)),
+                iconSize: [19.2, 19.2],
+                iconAnchor: [9.6, 9.6],
+                popupAnchor: [0, -10]
             }),
-            riseOnHover: true 
+            riseOnHover: true
         });
 
         const pollutionClean = (row.sol_pollution_existe || "").replace(/pollution /gi, "").trim();
@@ -112,10 +184,7 @@ function fitMap() {
 
     if (visibleCoords.length > 0) {
         const group = L.latLngBounds(visibleCoords);
-        map.fitBounds(group, { 
-            padding: [50, 50], 
-            maxZoom: 15        
-        });
+        map.fitBounds(group, { padding: [50, 50], maxZoom: 15 });
     }
 }
 
@@ -163,9 +232,9 @@ function loadGeoJsonData() {
                 const id = f.properties.site_id;
                 if (id) {
                     polygonsDict[id] = layer;
-                    layer.on('click', (e) => { 
-                        L.DomEvent.stopPropagation(e); 
-                        if(markersDict[id]) markersDict[id].openPopup(); 
+                    layer.on('click', (e) => {
+                        L.DomEvent.stopPropagation(e);
+                        if (markersDict[id]) markersDict[id].openPopup();
                     });
                 }
             }
@@ -190,25 +259,34 @@ function getFilteredData() {
 function initCascadingFilters() {
     const filters = ['.checkbox-list input', '#surface-min', '#surface-max'];
     filters.forEach(s => document.querySelectorAll(s).forEach(el => el.addEventListener('change', updateFilterOptions)));
-    
+
     selEpci.addEventListener('change', updateFilterOptions);
     selCommune.addEventListener('change', updateFilterOptions);
     selFriche.addEventListener('change', () => updateMap(true));
-    map.on('zoomend', () => updateMap(false));
+
+    map.on('zoomend', () => {
+        updateMap(false);
+
+        if (map.getZoom() >= CADASTRE_ZOOM_MIN) {
+            if (!map.hasLayer(cadastre)) cadastre.addTo(map);
+        } else {
+            if (map.hasLayer(cadastre)) map.removeLayer(cadastre);
+        }
+    });
 }
 
 function updateFilterOptions() {
     const data = getFilteredData();
     populateSelect(selEpci, data, 'epci_nom', '- Tous les EPCI -');
-    
+
     let fComm = data;
     if (selEpci.value) fComm = fComm.filter(d => d.epci_nom === selEpci.value);
     populateSelect(selCommune, fComm, 'comm_nom', '- Toutes les communes -');
-    
+
     let fFriche = fComm;
     if (selCommune.value) fFriche = fFriche.filter(d => d.comm_nom === selCommune.value);
     populateSelect(selFriche, fFriche, 'site_nom', '- Toutes les friches -');
-    
+
     updateMap(true);
 }
 
@@ -216,7 +294,12 @@ function populateSelect(s, d, k, t) {
     const val = s.value;
     s.innerHTML = `<option value="">${t}</option>`;
     const opts = [...new Set(d.map(i => i[k]))].filter(Boolean).sort();
-    opts.forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o; s.appendChild(opt); });
+    opts.forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o;
+        opt.textContent = o;
+        s.appendChild(opt);
+    });
     if ([...s.options].some(o => o.value === val)) s.value = val;
 }
 
