@@ -1,8 +1,8 @@
 const bounds = L.latLngBounds([48, 1], [52, 8]);
 const ZOOM_THRESHOLD = 13;
-const CADASTRE_ZOOM_THRESHOLD = 15; // Seuil d'affichage du cadastre
+const CADASTRE_ZOOM_THRESHOLD = 15;
 
-// Définition des fonds de carte
+// Définition des fonds de carte avec les URLs officielles Géoplateforme
 const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap'
 });
@@ -19,13 +19,14 @@ const ignOrtho = L.tileLayer('https://data.geopf.ign.fr/wmts?SERVICE=WMTS&REQUES
     attribution: '&copy; IGN'
 });
 
-// Définition de la surcouche Cadastre
-const cadastreLayer = L.tileLayer('https://tms.cadastre.data.gouv.fr/tiles/parcelles/{z}/{x}/{y}.png', {
-    maxZoom: 20,
-    attribution: '&copy; Cadastre Etalab'
+// Définition du Cadastre (Surcouche)
+const cadastreLayer = L.tileLayer('https://data.geopf.ign.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=CADASTRALPARCELS.PARCELS&STYLE=normal&FORMAT=image/png&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}', {
+    minZoom: CADASTRE_ZOOM_THRESHOLD,
+    maxZoom: 19,
+    attribution: '&copy; IGN / Cadastre'
 });
 
-let isCadastreChecked = false; // État de la case à cocher cadastre
+let isCadastreChecked = false; // Mémorise si l'utilisateur a coché la case
 
 const map = L.map('map', {
     minZoom: 8, maxZoom: 18,
@@ -47,19 +48,14 @@ const overlayMaps = {
 
 L.control.layers(baseMaps, overlayMaps, { collapsed: true }).addTo(map);
 
-// Gestion de l'activation manuelle du cadastre
+// Détection de l'action utilisateur sur le contrôle de couches
 map.on('overlayadd', function(e) {
-    if (e.layer === cadastreLayer) {
-        isCadastreChecked = true;
-        updateMap();
-    }
+    if (e.layer === cadastreLayer) isCadastreChecked = true;
+    updateMap();
 });
-
 map.on('overlayremove', function(e) {
-    if (e.layer === cadastreLayer) {
-        isCadastreChecked = false;
-        updateMap();
-    }
+    if (e.layer === cadastreLayer) isCadastreChecked = false;
+    updateMap();
 });
 
 let allData = [];
@@ -175,8 +171,8 @@ function updateMap(shouldFit = false) {
     const baseFiltered = getFilteredData();
     const currentZoom = map.getZoom();
     const showPolygons = currentZoom >= ZOOM_THRESHOLD;
-    
-    // Gestion auto du cadastre
+
+    // Gestion AUTO du cadastre selon le zoom SI coché par l'utilisateur
     if (isCadastreChecked && currentZoom >= CADASTRE_ZOOM_THRESHOLD) {
         if (!map.hasLayer(cadastreLayer)) cadastreLayer.addTo(map);
     } else {
