@@ -11,7 +11,11 @@ const osmHot = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.pn
     attribution: '&copy; OpenStreetMap / HOT'
 });
 
-const ignCarte = L.tileLayer('https://data.geopf.ign.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&FORMAT=image/png&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}', {
+const ignCarte = L.tileLayer(
+    'https://data.geopf.ign.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0'+
+    '&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&FORMAT=image/png'+
+    '&TILEMATRIXSET=PM'+
+    '&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}', {
     attribution: '&copy; IGN'
 });
 
@@ -283,5 +287,6 @@ const panel = document.getElementById('filters-panel');
 document.getElementById('toggle-filters').addEventListener('click', (e) => { e.stopPropagation(); panel.classList.add('open'); });
 document.getElementById('close-filters').addEventListener('click', () => panel.classList.remove('open'));
 map.on('click', () => panel.classList.remove('open'));
+
 
 
