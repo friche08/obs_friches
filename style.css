@@ -11,32 +11,90 @@ html, body, button, select, input, .leaflet-container {
 
 body { margin: 0; color: #161616; overflow-x: hidden; }
 
-/* Header */
+/* ==========================================================================
+   Header
+   ========================================================================== */
+
 .fr-header {
-    background: #fff; border-bottom: 1px solid #e5e5e5; padding: 10px 0;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08); position: relative; z-index: 1001;
+    background: #fff; 
+    border-bottom: 1px solid #e5e5e5; 
+    padding: 10px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08); 
+    position: relative; 
+    z-index: 1001;
 }
-.header-main { max-width: 90%; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
-.header-logo-block { display: flex; align-items: center; }
-/* Style pour PC (par défaut) */
+
+.header-main { 
+    max-width: 90%; 
+    margin: 0 auto; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+}
+
+.header-logo-block { 
+    display: flex; 
+    align-items: center; 
+}
+
+/* --- Style par défaut (PC) --- */
 .logo-pref { 
-    width: 80px;  /* Largeur sur PC */
+    width: 80px;  
     height: auto; 
 }
 
-/* Style pour Mobile */
+.separator-v { 
+    width: 1px; 
+    height: 50px; 
+    background-color: #e5e5e5; 
+    margin: 0 15px; 
+}
+
+.title-main { 
+    margin: 0; 
+    color: #000091; 
+    font-weight: 700; 
+    font-size: 1.8rem; 
+    line-height: 1.4; 
+}
+
+.title-sub { 
+    margin: 0; 
+    font-weight: 300; 
+    font-size: 0.75rem; 
+}
+
+/* --- Style spécifique MOBILE (max 768px) --- */
 @media (max-width: 768px) {
     .logo-pref { 
-        width: 60px; /* Largeur réduite sur Mobile */
+        width: 60px; /* Réduction du logo */
+    }
+
+    .separator-v { 
+        margin: 0 10px; /* Gain de place horizontal */
+        height: 40px; 
+    }
+
+    .title-main { 
+        font-size: 2rem; /* Titre plus gros sur mobile */
+        line-height: 1.2; 
+    }
+
+    .title-sub { 
+        font-size: 0.65rem; /* Sous-titre plus petit */
+        white-space: nowrap; /* Empêche le retour à la ligne */
     }
 }
-.separator-v { width: 1px; height: 50px; background-color: #e5e5e5; margin: 0 15px; }
-.title-main { margin: 0; color: #000091; font-weight: 700; font-size: 1.8rem; line-height: 1.4; }
-.title-sub { margin: 0; font-weight: 300; font-size: 0.75rem; }
 
+/* --- Bouton Filtres --- */
 #toggle-filters {
-    background-color: #000091; color: #fff; border: none; padding: 10px 14px;
-    font-weight: 700; cursor: pointer; border-radius: 4px;
+    background-color: #000091; 
+    color: #fff; 
+    border: none; 
+    padding: 10px 14px;
+    font-weight: 700; 
+    cursor: pointer; 
+    border-radius: 4px;
 }
 
 /* CARTE : Hauteur adaptative */
@@ -88,6 +146,7 @@ select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid #e5
 .popup-details div { margin-bottom: 4px; font-size: 0.9rem; }
 
 .picto { background: transparent; border: none; }
+
 
 
 
