@@ -147,7 +147,10 @@ function addMarkers(rows) {
                 <div><strong>${labelProprio} :</strong> ${pArray.join(', ')}</div>
             </div>`;
 
-        marker.bindPopup(popupContent);
+        marker.bindPopup(popupContent, {
+    maxWidth: 400, // Doit être supérieur ou égal à ta largeur CSS
+    minWidth: 300  // Aide à stabiliser le rendu
+});
         markers.push({ marker, data: row });
         if (row.site_id) markersDict[row.site_id] = marker;
     });
@@ -283,6 +286,7 @@ const panel = document.getElementById('filters-panel');
 document.getElementById('toggle-filters').addEventListener('click', (e) => { e.stopPropagation(); panel.classList.add('open'); });
 document.getElementById('close-filters').addEventListener('click', () => panel.classList.remove('open'));
 map.on('click', () => panel.classList.remove('open'));
+
 
 
 
