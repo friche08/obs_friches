@@ -137,18 +137,18 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid #e5e5e5; box-sizing: border-box; }
 .surface-inputs { display: flex; gap: 10px; }
 
-/* Popups */
+/* Popups - Largeur Fixe et Responsive */
+.leaflet-popup-content { 
+    width: 300px !important; /* Largeur fixe souhaitée */
+    max-width: 80vw !important; /* Sécurité pour smartphone */
+    margin: 15px !important; 
+}
+
 .popup-header-site { font-weight: 700; font-size: 1.1rem; color: #000091; margin-bottom: 2px; }
 .popup-commune { font-style: italic; font-size: 0.9rem; color: #666; display: block; margin-bottom: 8px; }
 .popup-sep { border: 0; border-top: 1px solid #eee; margin: 8px 0; }
-.img-container { width: 100%; margin: 8px 0; display: block; }
-.popup-img { width: 100%; height: auto; border-radius: 2px; display: block; }
+.img-container { width: 100%; margin: 8px 0; display: block; overflow: hidden; }
+.popup-img { width: 100% !important; height: auto !important; border-radius: 2px; display: block; }
 .popup-details div { margin-bottom: 4px; font-size: 0.9rem; }
 
 .picto { background: transparent; border: none; }
-
-
-
-
-
-
