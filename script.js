@@ -1,297 +1,136 @@
-const bounds = L.latLngBounds([48, 1], [52, 8]);
-const ZOOM_THRESHOLD = 13;
-const CADASTRE_ZOOM_THRESHOLD = 15;
+/* Polices Marianne */
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Light.woff2') format('woff2'); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Regular_Italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
 
-// Définition des fonds de carte avec les URLs officielles Géoplateforme
-const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; contributeurs OpenStreetMap'
-});
-
-const osmHot = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-    attribution: '&copy; contributeurs OpenStreetMap'
-});
-
-const ignCarte = L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image%2Fpng', {
-    attribution: '&copy; IGN'
-});
-
-const ignOrtho = L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image%2Fjpeg', {
-    attribution: '&copy; IGN'
-});
-
-// Définition du Cadastre (Surcouche)
-const cadastreLayer = L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=CADASTRALPARCELS.PARCELS&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image%2Fpng', {
-    minZoom: CADASTRE_ZOOM_THRESHOLD,
-    maxZoom: 19,
-    opacity: 0.7,
-    attribution: '&copy; IGN-DGFiP'
-});
-
-let isCadastreChecked = false; // Mémorise si l'utilisateur a coché la case
-
-const map = L.map('map', {
-    minZoom: 8, maxZoom: 18,
-    maxBounds: bounds, maxBoundsViscosity: 1.0,
-    layers: [osmHot] // Fond actif par défaut
-}).setView([49.7, 4.7], 9);
-
-// Contrôle des couches
-const baseMaps = {
-    "OpenStreetMap Humanitarian": osmHot,
-    "OpenStreetMap Standard": osmStandard,
-    "Plan IGN": ignCarte,
-    "Vue aérienne (BD Ortho®)": ignOrtho
-};
-
-const overlayMaps = {
-    "Cadastre": cadastreLayer
-};
-
-L.control.layers(baseMaps, overlayMaps, { collapsed: true, position: 'bottomleft' }).addTo(map);
-
-// Détection de l'action utilisateur sur le contrôle de couches
-map.on('overlayadd', function(e) {
-    if (e.layer === cadastreLayer) isCadastreChecked = true;
-    updateMap();
-});
-map.on('overlayremove', function(e) {
-    if (e.layer === cadastreLayer) isCadastreChecked = false;
-    updateMap();
-});
-
-let allData = [];
-let markers = [];
-let markersDict = {};
-let polygonsDict = {};
-const polygonsLayerGroup = L.layerGroup().addTo(map);
-const ardennesLayerGroup = L.layerGroup().addTo(map);
-
-const selEpci = document.getElementById('filter-epci');
-const selCommune = document.getElementById('filter-commune');
-const selFriche = document.getElementById('filter-friche');
-
-// 1. Marqueurs et Couleurs
-function getColorForStatus(s) {
-    const colors = { "friche potentielle": "#aea397", "friche sans projet": "#745b47", "friche avec projet": "#2b7756", "friche reconvertie": "#99c221" };
-    return colors[s] || "#777";
+/* Force Marianne partout sur PC et Mobile */
+html, body, button, select, input, .leaflet-container {
+    font-family: 'Marianne', Arial, sans-serif !important;
 }
 
-function createSvgPicto(pictocol) {
-    return `<svg width="19.2" height="19.2" version="1.1" xmlns="http://www.w3.org/2000/svg">
-      <rect x="3.6" y="3.6" width="12" height="12" rx="3" fill="${pictocol}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round">
-        <animate attributeName="x" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/>
-        <animate attributeName="y" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/>
-        <animate attributeName="width" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/>
-        <animate attributeName="height" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/>
-        <animate attributeName="stroke-width" dur="0.4s" begin="mouseover" from="1.6" to="3.2" fill="freeze"/>
-        <animate attributeName="x" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/>
-        <animate attributeName="y" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/>
-        <animate attributeName="width" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/>
-        <animate attributeName="height" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/>
-        <animate attributeName="stroke-width" dur="0.4s" begin="mouseout" from="3.2" to="1.6" fill="freeze"/>
-      </rect></svg>`;
+body { margin: 0; color: #161616; overflow-x: hidden; }
+
+/* ==========================================================================
+   Header
+   ========================================================================== */
+
+.fr-header {
+    background: #fff; 
+    border-bottom: 1px solid #e5e5e5; 
+    padding: 10px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08); 
+    position: relative; 
+    z-index: 1001;
 }
 
-// 2. Chargement des données
-Papa.parse('data.csv', {
-    download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
-    complete: function (results) {
-        allData = results.data;
-        const maxS = Math.max(...allData.map(d => d.unite_fonciere_surface || 0));
-        document.getElementById('surface-max').value = Math.ceil(maxS / 1000) * 1000;
-        
-        loadArdennesOutline();
-        loadGeoJsonData();
-        addMarkers(allData);
-        initCascadingFilters();
-        
-        updateFilterOptions(); // Remplit les listes et ajuste la vue au démarrage
+.header-main { 
+    max-width: 90%; 
+    margin: 0 auto; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+}
+
+.header-logo-block { 
+    display: flex; 
+    align-items: center; 
+}
+
+/* --- Style par défaut (PC) --- */
+.logo-pref { 
+    width: 80px;  
+    height: auto; 
+}
+
+.separator-v { 
+    width: 1px; 
+    height: 50px; 
+    background-color: #e5e5e5; 
+    margin: 0 15px; 
+}
+
+.title-main { 
+    margin: 0; 
+    color: #000091; 
+    font-weight: 700; 
+    font-size: 1.8rem; 
+    line-height: 1.4; 
+}
+
+.title-sub { 
+    margin: 0; 
+    font-weight: 300; 
+    font-size: 0.75rem; 
+}
+
+/* --- Style spécifique MOBILE (max 768px) --- */
+@media (max-width: 768px) {
+    .logo-pref { 
+        width: 60px; /* Réduction du logo */
     }
-});
 
-function addMarkers(rows) {
-    markers.forEach(m => map.removeLayer(m.marker));
-    markers = [];
-    rows.forEach(row => {
-        const lat = parseFloat(row.latitude), lon = parseFloat(row.longitude);
-        if (isNaN(lat)) return;
+    .separator-v { 
+        margin: 0 10px; /* Gain de place horizontal */
+        height: 40px; 
+    }
 
-        const marker = L.marker([lat, lon], {
-            icon: L.divIcon({ 
-                className: "picto", 
-                html: createSvgPicto(getColorForStatus(row.site_statut)), 
-                iconSize: [19.2, 19.2], 
-                iconAnchor: [9.6, 9.6], 
-                popupAnchor: [0, -10] 
-            }),
-            riseOnHover: true 
-        });
+    .title-main { 
+        font-size: 2rem; /* Titre plus gros sur mobile */
+        line-height: 1.2; 
+    }
 
-        const pollutionClean = (row.sol_pollution_existe || "").replace(/pollution /gi, "").trim();
-        const pRaw = row.proprio_nom || "";
-        const pArray = pRaw.split('|').map(p => p.trim() === "_X_" ? "(anonymisé)" : p.trim());
-        const labelProprio = pArray.length > 1 ? "Propriétaires" : "Propriétaire";
-        const imagePath = `photos/${row.site_id}.webp`;
-
-        const popupContent = `
-            <div class="popup-header-site">${row.site_nom || 'Friche'}</div>
-            <span class="popup-commune">${row.comm_nom || ''}</span>
-            <hr class="popup-sep">
-            <div class="img-container">
-                <img src="${imagePath}" class="popup-img" onerror="this.parentElement.style.display='none'"/>
-            </div>
-            <div class="popup-details">
-                <div><strong>Statut :</strong> ${row.site_statut}</div>
-                <div><strong>Surface :</strong> ${row.unite_fonciere_surface ? row.unite_fonciere_surface.toLocaleString('fr-FR') + ' m²' : 'Inconnue'}</div>
-                <div><strong>Pollution :</strong> ${pollutionClean || 'Inconnue'}</div>
-                <div><strong>${labelProprio} :</strong> ${pArray.join(', ')}</div>
-            </div>`;
-
-        marker.bindPopup(popupContent, {
-    maxWidth: 400, // Doit être supérieur ou égal à ta largeur CSS
-    minWidth: 300  // Aide à stabiliser le rendu
-});
-        markers.push({ marker, data: row });
-        if (row.site_id) markersDict[row.site_id] = marker;
-    });
-}
-
-// 3. Zoom Dynamique
-function fitMap() {
-    const visibleCoords = markers
-        .filter(item => map.hasLayer(item.marker))
-        .map(item => item.marker.getLatLng());
-
-    if (visibleCoords.length > 0) {
-        const group = L.latLngBounds(visibleCoords);
-        map.fitBounds(group, { 
-            padding: [50, 50], 
-            maxZoom: 15        
-        });
+    .title-sub { 
+        font-size: 0.65rem; /* Sous-titre plus petit */
+        white-space: nowrap; /* Empêche le retour à la ligne */
     }
 }
 
-function updateMap(shouldFit = false) {
-    const baseFiltered = getFilteredData();
-    const currentZoom = map.getZoom();
-    const showPolygons = currentZoom >= ZOOM_THRESHOLD;
-
-    // Gestion AUTO du cadastre selon le zoom SI coché par l'utilisateur
-    if (isCadastreChecked && currentZoom >= CADASTRE_ZOOM_THRESHOLD) {
-        if (!map.hasLayer(cadastreLayer)) cadastreLayer.addTo(map);
-    } else {
-        if (map.hasLayer(cadastreLayer)) map.removeLayer(cadastreLayer);
-    }
-
-    polygonsLayerGroup.clearLayers();
-
-    markers.forEach(item => {
-        const d = item.data;
-        let visible = baseFiltered.includes(d);
-        if (visible && selEpci.value && d.epci_nom !== selEpci.value) visible = false;
-        if (visible && selCommune.value && d.comm_nom !== selCommune.value) visible = false;
-        if (visible && selFriche.value && d.site_nom !== selFriche.value) visible = false;
-
-        if (visible) {
-            if (!map.hasLayer(item.marker)) item.marker.addTo(map);
-            if (showPolygons && d.site_id && polygonsDict[d.site_id]) {
-                polygonsLayerGroup.addLayer(polygonsDict[d.site_id]);
-            }
-        } else {
-            map.removeLayer(item.marker);
-        }
-    });
-
-    if (shouldFit) fitMap();
+/* --- Bouton Filtres --- */
+#toggle-filters {
+    background-color: #000091; 
+    color: #fff; 
+    border: none; 
+    padding: 10px 14px;
+    font-weight: 700; 
+    cursor: pointer; 
+    border-radius: 4px;
 }
 
-// 4. Données Géo
-function loadArdennesOutline() {
-    fetch('ardennes.geojson').then(r => r.json()).then(geojson => {
-        L.geoJSON(geojson, { style: { color: '#ffffff', weight: 5, opacity: 1, fillOpacity: 0, interactive: false } }).addTo(ardennesLayerGroup);
-        L.geoJSON(geojson, { style: { color: '#422d58', weight: 2, opacity: 1, fillOpacity: 0, interactive: false } }).addTo(ardennesLayerGroup);
-    });
+/* CARTE : Hauteur adaptative */
+#map { 
+    width: 90%; 
+    height: 82vh; /* 82% sur PC */
+    margin: 0 auto; 
+    border: 1px solid #e5e5e5; 
+    z-index: 1; 
 }
 
-function loadGeoJsonData() {
-    fetch('friches.geojson').then(r => r.json()).then(geojson => {
-        L.geoJSON(geojson, {
-            style: (f) => {
-                const row = allData.find(d => d.site_id === f.properties.site_id);
-                return { color: row ? getColorForStatus(row.site_statut) : '#3388ff', weight: 2, opacity: 1, fillOpacity: 0.3 };
-            },
-            onEachFeature: (f, layer) => {
-                const id = f.properties.site_id;
-                if (id) {
-                    polygonsDict[id] = layer;
-                    layer.on('click', (e) => { 
-                        L.DomEvent.stopPropagation(e); 
-                        if(markersDict[id]) markersDict[id].openPopup(); 
-                    });
-                }
-            }
-        });
-        updateMap(false);
-    });
+/* Responsive Mobile */
+@media (max-width: 768px) {
+    .btn-text { display: none; }
+    .separator-v { margin: 0 8px; }
+    .title-main { font-size: 1rem; }
+    #map { height: 76vh; } /* 76% sur Mobile */
 }
 
-// 5. Filtres
-function getFilteredData() {
-    const sMin = parseFloat(document.getElementById('surface-min').value) || 0;
-    const sMax = parseFloat(document.getElementById('surface-max').value) || Infinity;
-    const allowed = Array.from(document.querySelectorAll('.checkbox-list input:checked')).map(cb => cb.value);
-
-    return allData.filter(d => {
-        if (!allowed.includes(d.site_statut)) return false;
-        const s = d.unite_fonciere_surface || 0;
-        return (s >= sMin && s <= sMax);
-    });
+/* Panneau de filtres */
+#filters-panel {
+    position: fixed; top: 0; right: 0; width: 350px; max-width: 85%; height: 100%;
+    background: #fff; box-shadow: -4px 0 12px rgba(0,0,0,0.1);
+    z-index: 2000; transform: translateX(100%); transition: transform 0.3s ease;
+    display: flex; flex-direction: column;
 }
+#filters-panel.open { transform: translateX(0); }
+.panel-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+.panel-header h2 { margin: 0; font-size: 1.1rem; font-weight: 700; }
+#close-filters { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+.panel-content { padding: 0 20px 20px 20px; overflow-y: auto; }
 
-function initCascadingFilters() {
-    const filters = ['.checkbox-list input', '#surface-min', '#surface-max'];
-    filters.forEach(s => document.querySelectorAll(s).forEach(el => el.addEventListener('change', updateFilterOptions)));
-    
-    selEpci.addEventListener('change', updateFilterOptions);
-    selCommune.addEventListener('change', updateFilterOptions);
-    selFriche.addEventListener('change', () => updateMap(true));
-    map.on('zoomend', () => updateMap(false));
-}
+.status-fieldset { border: 1px solid #e5e5e5; background: #f6f6f6; padding: 15px; margin-bottom: 20px; }
+.status-fieldset legend { font-weight: 700; font-size: 0.9rem; padding: 0 5px; }
+.checkbox-list { display: flex; flex-direction: column; gap: 10px; }
+.checkbox-list label { font-weight: 400; display: flex; align-items: center; gap: 10px; cursor: pointer; margin:0; }
 
-function updateFilterOptions() {
-    const data = getFilteredData();
-    populateSelect(selEpci, data, 'epci_nom', '- Tous les EPCI -');
-    
-    let fComm = data;
-    if (selEpci.value) fComm = fComm.filter(d => d.epci_nom === selEpci.value);
-    populateSelect(selCommune, fComm, 'comm_nom', '- Toutes les communes -');
-    
-    let fFriche = fComm;
-    if (selCommune.value) fFriche = fFriche.filter(d => d.comm_nom === selCommune.value);
-    populateSelect(selFriche, fFriche, 'site_nom', '- Toutes les friches -');
-    
-    updateMap(true);
-}
-
-function populateSelect(s, d, k, t) {
-    const val = s.value;
-    s.innerHTML = `<option value="">${t}</option>`;
-    const opts = [...new Set(d.map(i => i[k]))].filter(Boolean).sort();
-    opts.forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o; s.appendChild(opt); });
-    if ([...s.options].some(o => o.value === val)) s.value = val;
-}
-
-// UI
-const panel = document.getElementById('filters-panel');
-document.getElementById('toggle-filters').addEventListener('click', (e) => { e.stopPropagation(); panel.classList.add('open'); });
-document.getElementById('close-filters').addEventListener('click', () => panel.classList.remove('open'));
-map.on('click', () => panel.classList.remove('open'));
-
-
-
-
-
-
-
-
-
+.filter-group { margin-bottom: 20px; }
+.filter-group label { display: block; font-weight: 700;
