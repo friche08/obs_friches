@@ -139,8 +139,8 @@ select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid #e5
 
 /* Popups - Largeur Fixe et Responsive */
 .leaflet-popup-content { 
-    width: 300px !important; /* Largeur fixe souhaitée */
-    max-width: 80vw !important; /* Sécurité pour smartphone */
+    width: 300px !important; 
+    max-width: 80vw !important; 
     margin: 15px !important; 
 }
 
@@ -152,3 +152,20 @@ select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid #e5
 .popup-details div { margin-bottom: 4px; font-size: 0.9rem; }
 
 .picto { background: transparent; border: none; }
+
+/* Style de l'info-bulle (Tooltip) : Blanc avec texte Bleu Marianne */
+.leaflet-tooltip {
+    background-color: #ffffff !important;
+    color: #000091 !important;
+    border: 1px solid #e5e5e5 !important;
+    border-radius: 4px !important;
+    padding: 4px 8px !important;
+    font-weight: 700 !important;
+    font-size: 0.8rem !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+}
+
+/* Petit triangle sous l'info-bulle */
+.leaflet-tooltip-top:before {
+    border-top-color: #ffffff !important;
+}
