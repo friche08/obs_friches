@@ -147,10 +147,17 @@ function addMarkers(rows) {
                 <div><strong>${labelProprio} :</strong> ${pArray.join(', ')}</div>
             </div>`;
 
-        // MODIFICATION ICI : Options pour garantir la largeur fixe et cohérente avec le CSS
         marker.bindPopup(popupContent, {
             minWidth: 300,
             maxWidth: 300
+        });
+
+        // AJOUT DU TOOLTIP AU SURVOL
+        marker.bindTooltip(row.site_nom || 'Friche', {
+            direction: 'top',
+            sticky: false,
+            offset: [0, -15],
+            opacity: 1
         });
 
         markers.push({ marker, data: row });
