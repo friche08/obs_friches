@@ -1,14 +1,15 @@
 /* ==========================================================================
-   1. POLICES & CONFIGURATION GLOBALE (MARIANNE)
+   1. POLICES & CONFIGURATION GLOBALE
    ========================================================================== */
 @font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Light.woff2') format('woff2'); font-weight: 300; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Marianne'; src: url('fonts/Marianne-Regular_Italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
 
 :root {
     --blue-marianne: #000091;
     --blue-marianne-hover: #1212ff;
+    --blue-marianne-active: #2323ff;
+    --grey-border: #eeeeee;
     --grey-bg-hover: #f6f6f6;
 }
 
@@ -38,7 +39,6 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 .title-main { margin: 0; color: var(--blue-marianne); font-weight: 700; font-size: 1.8rem; line-height: 1.4; }
 .title-sub { margin: 0; font-weight: 300; font-size: 0.75rem; }
 
-/* --- Bouton Filtres --- */
 #toggle-filters {
     background-color: var(--blue-marianne) !important;
     color: #fff !important; border: none; padding: 10px 14px;
@@ -52,7 +52,7 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
     .logo-pref { width: 60px; }
     .separator-v { height: 40px; margin: 0 10px; }
     .title-main { font-size: 1.1rem; line-height: 1.2; }
-    .title-sub { font-size: 0.65rem; white-space: nowrap; }
+    .title-sub { font-size: 0.65rem; }
     .btn-text { display: none; }
     #toggle-filters { 
         padding: 0 !important; width: 40px !important; height: 40px !important;
@@ -67,17 +67,19 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 @media (max-width: 768px) { #map { height: 80vh; } }
 
 /* ==========================================================================
-   4. BOUTONS DE CARTE (NETTOYAGE DU LISERÉ GRIS)
+   4. BOUTONS DE CARTE (NETTOYAGE COMPLET DES LISERÉS)
    ========================================================================== */
 
-/* On neutralise les bordures forcées de Leaflet (mode tactile inclus) */
-.leaflet-bar, .leaflet-touch .leaflet-bar, 
-.leaflet-control-layers, .leaflet-touch .leaflet-control-layers {
+/* Suppression forcée des bordures Leaflet (y compris mode tactile) */
+.leaflet-bar, 
+.leaflet-touch .leaflet-bar, 
+.leaflet-touch .leaflet-control-layers, 
+.leaflet-control-layers {
     border: none !important;
     box-shadow: none !important;
 }
 
-/* Style commun : Fond blanc + Ombre (identique à la Légende) */
+/* Style commun : Fond blanc + Ombre (Zoom, Couches, Légende) */
 .leaflet-bar a, 
 .leaflet-control-layers-toggle, 
 .legend-toggle-btn {
@@ -92,17 +94,18 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
     border-radius: 4px !important;
 }
 
-/* Icones SVG boutons */
+/* Icones SVG */
 .leaflet-bar a svg, .leaflet-control-layers-toggle svg, .legend-toggle-btn svg {
     width: 22px !important; height: 22px !important; stroke: currentColor;
 }
 
+/* Hover */
 .leaflet-bar a:hover, .leaflet-control-layers-toggle:hover, .legend-toggle-btn:hover {
     background-color: var(--grey-bg-hover) !important;
     color: var(--blue-marianne-hover) !important;
 }
 
-/* --- Bloc Zoom fusionné --- */
+/* --- SPÉCIFIQUE ZOOM (Bloc unique rectangulaire) --- */
 .leaflet-control-zoom {
     display: flex; flex-direction: column;
     box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important;
@@ -110,39 +113,24 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
     background: #fff;
     border: none !important;
 }
-.leaflet-control-zoom-in { border-radius: 4px 4px 0 0 !important; border-bottom: 1px solid #f0f0f0 !important; }
-.leaflet-control-zoom-out { border-radius: 0 0 4px 4px !important; }
 
-/* ==========================================================================
-   5. POPUPS (ASPECT & TAILLE PRÉCÉDENTE)
-   ========================================================================== */
-.leaflet-popup-content { 
-    width: 300px !important; 
-    max-width: 80vw !important; 
-    margin: 15px !important; 
+.leaflet-control-zoom-in {
+    border-radius: 4px 4px 0 0 !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid #f0f0f0 !important; /* Trait de séparation interne léger */
+    height: 30px !important;
+    margin-bottom: 0 !important;
 }
 
-.popup-header-site { font-weight: 700; font-size: 1.1rem; color: var(--blue-marianne); margin-bottom: 2px; }
-.popup-commune { font-style: italic; font-size: 0.9rem; color: #666; display: block; margin-bottom: 8px; }
-.popup-sep { border: 0; border-top: 1px solid #eee; margin: 8px 0; }
-.img-container { width: 100%; margin: 8px 0; display: block; overflow: hidden; }
-.popup-img { width: 100% !important; height: auto !important; border-radius: 2px; display: block; }
-.popup-details div { margin-bottom: 4px; font-size: 0.9rem; }
-
-/* Tooltips */
-.leaflet-tooltip {
-    background-color: #ffffff !important;
-    color: var(--blue-marianne) !important;
-    border: none !important;
-    border-radius: 4px !important;
-    padding: 4px 8px !important;
-    font-size: 0.8rem !important;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+.leaflet-control-zoom-out {
+    border-radius: 0 0 4px 4px !important;
+    box-shadow: none !important;
+    height: 30px !important;
+    margin-top: 0 !important;
 }
-.leaflet-tooltip-top:before { border-top-color: #ffffff !important; }
 
 /* ==========================================================================
-   6. LÉGENDE & PANNEAUX COUCHES
+   5. PANNEAUX OUVERTS
    ========================================================================== */
 .leaflet-control-layers-expanded, 
 .custom-legend-container.legend-expanded {
@@ -151,18 +139,23 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
     border: none !important;
     border-radius: 4px !important;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    display: flex; flex-direction: column;
 }
 
+.leaflet-control-layers-expanded .leaflet-control-layers-toggle,
+.legend-expanded .legend-toggle-btn { display: none !important; }
+
+/* Légende dynamique */
 .custom-legend-container { background: transparent; border: none; box-shadow: none; }
 .legend-content { display: none; }
-.legend-expanded { display: flex; flex-direction: column; }
 .legend-expanded .legend-content { display: block; }
 .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.legend-item:last-child { margin-bottom: 0; }
 .legend-swatch { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
 .legend-label { font-size: 0.85rem; color: #333; white-space: nowrap; }
 
 /* ==========================================================================
-   7. FILTRES & FORMULAIRES
+   6. FILTRES & FORMULAIRES
    ========================================================================== */
 #filters-panel {
     position: fixed; top: 0; right: 0; width: 350px; max-width: 85%; height: 100%;
@@ -173,11 +166,27 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 #filters-panel.open { transform: translateX(0); }
 .panel-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
 #close-filters { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
-.panel-content { padding: 0 20px 20px 20px; overflow-y: auto; }
+.panel-content { padding: 0 20px 20px 20px; overflow-y: auto; overflow-x: hidden; }
 
+.surface-inputs { display: flex; gap: 10px; width: 100%; box-sizing: border-box; }
+.surface-inputs input { flex: 1; min-width: 0; padding: 10px; border: 1px solid #e5e5e5; }
 .status-fieldset { border: 1px solid #e5e5e5; background: #f6f6f6; padding: 15px; margin-bottom: 20px; }
 .checkbox-list { display: flex; flex-direction: column; gap: 10px; }
-select, input { width: 100%; padding: 10px; border: 1px solid #e5e5e5; box-sizing: border-box; }
-.surface-inputs { display: flex; gap: 10px; }
 
-.picto { background: transparent; border: none; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--blue-marianne); outline: none !important; box-shadow: none !important; }
+select { width: 100%; padding: 10px; border: 1px solid #e5e5e5; box-sizing: border-box; }
+select:focus, input:focus { outline: none !important; border: 2px solid var(--blue-marianne-hover); }
+
+/* ==========================================================================
+   7. POPUPS & TOOLTIPS
+   ========================================================================== */
+.leaflet-popup-content { width: 300px !important; max-width: 80vw !important; margin: 15px !important; }
+.popup-header-site { font-weight: 700; font-size: 1.1rem; color: var(--blue-marianne); }
+.popup-img { width: 100% !important; border-radius: 2px; }
+
+.leaflet-tooltip {
+    background-color: #fff !important; color: var(--blue-marianne) !important;
+    border: none !important; box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+    padding: 4px 8px !important; font-size: 0.8rem !important;
+}
+.leaflet-tooltip-top:before { border-top-color: #fff !important; }
