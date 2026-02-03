@@ -3,10 +3,10 @@ const ZOOM_THRESHOLD = 13;
 const CADASTRE_ZOOM_THRESHOLD = 15;
 
 const statusColors = {
-    "friche potentielle": "#aea397",
-    "friche sans projet": "#745b47",
     "friche avec projet": "#2b7756",
-    "friche reconvertie": "#99c221"
+    "friche sans projet": "#745b47",
+    "friche reconvertie": "#99c221",
+    "friche potentielle": "#aea397"
 };
 
 function getColorForStatus(s) {
@@ -28,63 +28,54 @@ const map = L.map('map', {
     minZoom: 8, maxZoom: 18, maxBounds: bounds, maxBoundsViscosity: 1.0, layers: [osmHot]
 }).setView([49.7, 4.7], 9);
 
-// Contrôles
+// Contrôles Leaflet
 const baseMaps = { "OSM Humanitarian": osmHot, "OSM Standard": osmStandard, "Plan IGN": ignCarte, "Vue aérienne": ignOrtho };
 const overlayMaps = { "Cadastre": cadastreLayer };
 const layerControl = L.control.layers(baseMaps, overlayMaps, { collapsed: true, position: 'bottomleft' }).addTo(map);
 
-// --- Gestion Propre de l'Icône Couches (Sans superposition) ---
+// Injection Icône Couches (SVG spécifique)
 const layerControlContainer = document.querySelector('.leaflet-control-layers');
 const layerBtn = document.querySelector('.leaflet-control-layers-toggle');
+layerBtn.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M7 10.5 L15 5.5 L23 10.5 L15 15.5 Z"/><path d="M24.34 14.16 L15 20 L5.66 14.16"/><path d="M24.34 18.66 L15 24.5 L5.66 18.66"/></svg>`;
 
-function updateLayerIcon() {
-    const isExpanded = layerControlContainer.classList.contains('leaflet-control-layers-expanded');
-    if (isExpanded) {
-        layerBtn.innerHTML = ''; 
-    } else {
-        layerBtn.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M7 10.5 L15 5.5 L23 10.5 L15 15.5 Z"/><path d="M24.34 14.16 L15 20 L5.66 14.16"/><path d="M24.34 18.66 L15 24.5 L5.66 18.66"/></svg>`;
-    }
-}
-updateLayerIcon();
-const observer = new MutationObserver(() => updateLayerIcon());
-observer.observe(layerControlContainer, { attributes: true, attributeFilter: ['class'] });
-
-// Légende Dynamique
-let legendContent, legendButton;
+// --- Contrôle de Légende Dynamique (Harmonisé Couches) ---
 const LegendControl = L.Control.extend({
     options: { position: 'bottomleft' },
     onAdd: function() {
-        const container = L.DomUtil.create('div', 'leaflet-control custom-legend-block');
-        legendButton = L.DomUtil.create('a', 'legend-toggle-btn', container);
-        legendButton.href = '#';
-        legendButton.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><rect x="7.15" y="8" width="5" height="5"/><circle cx="9.65" cy="19.8" r="2.8"/><path d="M16.15 8 H24.15"/><path d="M16.15 15 H24.15"/><path d="M16.15 22 H24.15"/></svg>`;
+        const container = L.DomUtil.create('div', 'leaflet-control custom-legend-container');
         
-        legendContent = L.DomUtil.create('div', 'legend-content', container);
-        legendContent.style.display = 'none';
-        let html = '<div class="legend-title">Statut des friches</div>';
-        for (const [s, c] of Object.entries(statusColors)) {
-            html += `<div class="legend-item"><span class="legend-swatch" style="background:${c}"></span><span class="legend-label">${s}</span></div>`;
-        }
-        legendContent.innerHTML = html;
+        const button = L.DomUtil.create('a', 'legend-toggle-btn', container);
+        button.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><rect x="7.15" y="8" width="5" height="5"/><circle cx="9.65" cy="19.8" r="2.8"/><path d="M16.15 8 H24.15"/><path d="M16.15 15 H24.15"/><path d="M16.15 22 H24.15"/></svg>`;
 
-        L.DomEvent.on(legendButton, 'click', function(e) {
-            L.DomEvent.stop(e);
-            if (legendContent.style.display === 'none') {
-                layerControlContainer.classList.remove('leaflet-control-layers-expanded');
-                legendContent.style.display = 'block'; legendButton.classList.add('active');
-            } else { closeLegend(); }
+        const content = L.DomUtil.create('div', 'legend-content', container);
+        const order = ["friche avec projet", "friche sans projet", "friche reconvertie", "friche potentielle"];
+        
+        order.forEach(status => {
+            const item = L.DomUtil.create('div', 'legend-item', content);
+            item.innerHTML = `<span class="legend-swatch" style="background:${statusColors[status]}"></span><span class="legend-label">${status}</span>`;
         });
-        L.DomEvent.disableClickPropagation(container);
+
+        // Ouverture au survol (identique aux couches)
+        L.DomEvent.on(container, 'mouseenter', () => {
+            L.DomUtil.addClass(container, 'legend-expanded');
+            layerControlContainer.classList.remove('leaflet-control-layers-expanded');
+        });
+        L.DomEvent.on(container, 'mouseleave', () => {
+            L.DomUtil.removeClass(container, 'legend-expanded');
+        });
+
         return container;
     }
 });
 map.addControl(new LegendControl());
 
-function closeLegend() { if(legendContent) { legendContent.style.display = 'none'; legendButton.classList.remove('active'); } }
-layerControlContainer.addEventListener('mouseenter', closeLegend);
-map.on('click', closeLegend);
+// Fermer la légende si on survole les couches
+layerControlContainer.addEventListener('mouseenter', () => {
+    const leg = document.querySelector('.custom-legend-container');
+    if(leg) L.DomUtil.removeClass(leg, 'legend-expanded');
+});
 
-// Logique Données
+// Logique Données et Marqueurs
 function createSvgPicto(pictocol) {
     return `<svg width="19.2" height="19.2" version="1.1" xmlns="http://www.w3.org/2000/svg"><rect x="3.6" y="3.6" width="12" height="12" rx="3" fill="${pictocol}" stroke="#ffffff" stroke-width="1.6"/></svg>`;
 }
@@ -196,6 +187,6 @@ function loadGeoJsonData() {
 const panel = document.getElementById('filters-panel');
 document.getElementById('toggle-filters').addEventListener('click', (e) => { e.stopPropagation(); panel.classList.add('open'); });
 document.getElementById('close-filters').addEventListener('click', () => panel.classList.remove('open'));
-map.on('click', () => { panel.classList.remove('open'); closeLegend(); });
+map.on('click', () => { panel.classList.remove('open'); });
 map.on('overlayadd', (e) => { if (e.layer === cadastreLayer) isCadastreChecked = true; updateMap(); });
 map.on('overlayremove', (e) => { if (e.layer === cadastreLayer) isCadastreChecked = false; updateMap(); });
