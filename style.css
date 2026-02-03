@@ -41,43 +41,67 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 /* Carte */
 #map { width: 90%; height: 82vh; margin: 0 auto; border: 1px solid #e5e5e5; z-index: 1; }
 
-/* Boutons de la Carte (Zoom, Couches, Légende) */
+/* --- BOUTONS DE LA CARTE (Zoom, Couches, Légende) --- */
 .leaflet-bar { border: none !important; }
-.leaflet-bar a, .leaflet-control-layers-toggle, .legend-toggle-btn {
+.leaflet-bar a, 
+.leaflet-control-layers-toggle, 
+.legend-toggle-btn {
     background-color: #ffffff !important;
     color: var(--blue-marianne) !important;
     border: 1px solid var(--grey-border) !important;
     border-radius: 4px !important;
     display: flex !important; align-items: center; justify-content: center;
-    width: 30px !important; height: 30px !important; /* Taille réduite demandée */
+    width: 30px !important; height: 30px !important;
     box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
     transition: all 0.2s ease-in-out; cursor: pointer;
     background-image: none !important; /* Supprime l'icône Leaflet par défaut */
 }
-.leaflet-bar a svg, .leaflet-control-layers-toggle svg, .legend-toggle-btn svg {
+
+/* Suppression du carré blanc fantôme quand le menu est ouvert */
+.leaflet-control-layers-expanded .leaflet-control-layers-toggle,
+.legend-expanded .legend-toggle-btn {
+    display: none !important;
+}
+
+/* Style des SVGs à l'intérieur */
+.leaflet-bar a svg, 
+.leaflet-control-layers-toggle svg, 
+.legend-toggle-btn svg {
     width: 22px !important; height: 22px !important; stroke: currentColor;
 }
-.leaflet-bar a:hover, .leaflet-control-layers-toggle:hover, .legend-toggle-btn:hover {
+
+/* États Hover et Active */
+.leaflet-bar a:hover, 
+.leaflet-control-layers-toggle:hover, 
+.legend-toggle-btn:hover {
     background-color: var(--grey-bg-hover) !important;
     color: var(--blue-marianne-hover) !important;
 }
-.leaflet-bar a:active, .legend-toggle-btn.active {
-    color: var(--blue-marianne-active) !important;
-    border-color: var(--blue-marianne-active) !important;
+
+/* --- PANNEAUX EXPANSÉS (Couches & Légende) --- */
+.leaflet-control-layers-expanded, 
+.legend-expanded {
+    padding: 10px !important;
+    background: #fff !important;
+    border: 1px solid var(--grey-border) !important;
+    border-radius: 4px !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
 }
 
-/* Légende */
-.custom-legend-block { display: flex; flex-direction: column-reverse; align-items: flex-start; }
-.legend-content {
-    background: white; padding: 12px; border: 1px solid var(--grey-border);
-    border-radius: 4px; margin-bottom: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+/* Légende Spécifique */
+.custom-legend-container { 
+    display: flex; 
+    flex-direction: column-reverse; 
+    align-items: flex-start;
 }
-.legend-title { font-weight: 700; font-size: 0.85rem; margin-bottom: 8px; color: var(--blue-marianne); }
-.legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.legend-content { display: none; }
+.legend-expanded .legend-content { display: block; }
+
+.legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .legend-swatch { width: 12px; height: 12px; border-radius: 2px; }
-.legend-label { font-size: 0.8rem; color: #333; }
+.legend-label { font-size: 0.85rem; color: #333; }
 
-/* Panneau filtres */
+/* --- FORMULAIRES ET FILTRES --- */
 #filters-panel {
     position: fixed; top: 0; right: 0; width: 350px; max-width: 85%; height: 100%;
     background: #fff; box-shadow: -4px 0 12px rgba(0,0,0,0.1);
@@ -88,21 +112,20 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 .panel-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
 #close-filters { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
 
-/* Fix des inputs de surface pour éviter le débordement */
 .panel-content { padding: 0 20px 20px 20px; overflow-y: auto; overflow-x: hidden; }
 .surface-inputs { display: flex; gap: 10px; width: 100%; box-sizing: border-box; }
-.surface-inputs input { flex: 1; min-width: 0; }
+.surface-inputs input { flex: 1; min-width: 0; padding: 10px; border: 1px solid #e5e5e5; }
 
 .status-fieldset { border: 1px solid #e5e5e5; background: #f6f6f6; padding: 15px; margin-bottom: 20px; }
 .checkbox-list { display: flex; flex-direction: column; gap: 10px; }
 
-/* Style des inputs Coché (Accent color et retrait du contour bleu) */
+/* Style des inputs (Accent color et retrait du contour bleu) */
 input[type="checkbox"], input[type="radio"] { 
     accent-color: var(--blue-marianne); 
     outline: none !important; 
     box-shadow: none !important; 
 }
-select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid #e5e5e5; box-sizing: border-box; }
+select { width: 100%; padding: 10px; border: 1px solid #e5e5e5; box-sizing: border-box; }
 select:focus, input:focus { outline: none !important; border: 2px solid var(--blue-marianne-hover); }
 
 /* Popups et Tooltips */
