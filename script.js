@@ -38,31 +38,52 @@ const layerControlContainer = document.querySelector('.leaflet-control-layers');
 const layerBtn = document.querySelector('.leaflet-control-layers-toggle');
 layerBtn.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M7 10.5 L15 5.5 L23 10.5 L15 15.5 Z"/><path d="M24.34 14.16 L15 20 L5.66 14.16"/><path d="M24.34 18.66 L15 24.5 L5.66 18.66"/></svg>`;
 
-// --- Contrôle de Légende Dynamique (Harmonisé Couches) ---
+// --- Contrôle de Légende Dynamique (CORRIGÉ) ---
 const LegendControl = L.Control.extend({
     options: { position: 'bottomleft' },
     onAdd: function() {
         const container = L.DomUtil.create('div', 'leaflet-control custom-legend-container');
         
+        // Bouton (visible par défaut)
         const button = L.DomUtil.create('a', 'legend-toggle-btn', container);
+        button.href = '#'; // Nécessaire pour le style "leaflet-bar a"
         button.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><rect x="7.15" y="8" width="5" height="5"/><circle cx="9.65" cy="19.8" r="2.8"/><path d="M16.15 8 H24.15"/><path d="M16.15 15 H24.15"/><path d="M16.15 22 H24.15"/></svg>`;
 
+        // Contenu (caché par défaut)
         const content = L.DomUtil.create('div', 'legend-content', container);
-        const order = ["friche avec projet", "friche sans projet", "friche reconvertie", "friche potentielle"];
         
+        // ORDRE IMPOSÉ
+        const order = [
+            "friche avec projet", 
+            "friche sans projet", 
+            "friche reconvertie", 
+            "friche potentielle"
+        ];
+        
+        // Génération HTML sans titre et dans l'ordre
         order.forEach(status => {
-            const item = L.DomUtil.create('div', 'legend-item', content);
-            item.innerHTML = `<span class="legend-swatch" style="background:${statusColors[status]}"></span><span class="legend-label">${status}</span>`;
+            if(statusColors[status]) { // Vérification de sécurité
+                const item = L.DomUtil.create('div', 'legend-item', content);
+                item.innerHTML = `
+                    <span class="legend-swatch" style="background:${statusColors[status]}"></span>
+                    <span class="legend-label">${status}</span>
+                `;
+            }
         });
 
         // Ouverture au survol (identique aux couches)
         L.DomEvent.on(container, 'mouseenter', () => {
             L.DomUtil.addClass(container, 'legend-expanded');
+            // Ferme le menu couches s'il est ouvert pour éviter chevauchement
             layerControlContainer.classList.remove('leaflet-control-layers-expanded');
         });
+        
         L.DomEvent.on(container, 'mouseleave', () => {
             L.DomUtil.removeClass(container, 'legend-expanded');
         });
+
+        // Empêcher le clic de traverser (utile si sur mobile)
+        L.DomEvent.disableClickPropagation(container);
 
         return container;
     }
