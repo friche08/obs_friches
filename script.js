@@ -13,7 +13,6 @@ function getColorForStatus(s) {
     return statusColors[s] || "#777";
 }
 
-// 1. Fonctions de création des pictogrammes animés
 function createSvgPicto(pictocol) {
     return `<svg width="19.2" height="19.2" version="1.1" xmlns="http://www.w3.org/2000/svg">
       <rect x="3.6" y="3.6" width="12" height="12" rx="3" fill="${pictocol}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round">
@@ -30,7 +29,6 @@ function createSvgPicto(pictocol) {
       </rect></svg>`;
 }
 
-// Configuration des couches
 const osmHot = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
 const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
 const ignCarte = L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image%2Fpng', { attribution: '&copy; IGN' });
@@ -48,17 +46,19 @@ const map = L.map('map', {
 
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-// --- GESTION DES COUCHES ---
 const baseMaps = { "OSM Humanitarian": osmHot, "OSM Standard": osmStandard, "Plan IGN": ignCarte, "Vue aérienne": ignOrtho };
 const overlayMaps = { "Cadastre": cadastreLayer };
 
+// Retour au contrôle de couches standard
 const layerControl = L.control.layers(baseMaps, overlayMaps, { collapsed: true, position: 'bottomleft' }).addTo(map);
 
-const layerControlContainer = document.querySelector('.leaflet-control-layers');
+// Ré-injection de l'icône SVG pour le bouton Couches
 const layerBtn = document.querySelector('.leaflet-control-layers-toggle');
-layerBtn.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M7 10.5 L15 5.5 L23 10.5 L15 15.5 Z" stroke="currentColor"/><path d="M24.34 14.16 L15 20 L5.66 14.16" stroke="currentColor"/><path d="M24.34 18.66 L15 24.5 L5.66 18.66" stroke="currentColor"/></svg>`;
+if(layerBtn) {
+    layerBtn.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M7 10.5 L15 5.5 L23 10.5 L15 15.5 Z" stroke="currentColor"/><path d="M24.34 14.16 L15 20 L5.66 14.16" stroke="currentColor"/><path d="M24.34 18.66 L15 24.5 L5.66 18.66" stroke="currentColor"/></svg>`;
+}
 
-// --- LÉGENDE DYNAMIQUE ---
+// Légende avec comportement au survol
 const LegendControl = L.Control.extend({
     options: { position: 'bottomleft' },
     onAdd: function() {
@@ -66,12 +66,11 @@ const LegendControl = L.Control.extend({
         const button = L.DomUtil.create('a', 'legend-toggle-btn', container);
         button.href = '#';
         button.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="7" width="5" height="5" stroke="currentColor"/><circle cx="9.5" cy="20" r="2.5" stroke="currentColor"/><path d="M16 8 H24 M16 15 H24 M16 22 H24" stroke="currentColor"/></svg>`;
+        
         const content = L.DomUtil.create('div', 'legend-content', container);
         content.id = 'legend-dynamic-content';
-        L.DomEvent.on(container, 'mouseenter', () => {
-            L.DomUtil.addClass(container, 'legend-expanded');
-            layerControlContainer.classList.remove('leaflet-control-layers-expanded');
-        });
+
+        L.DomEvent.on(container, 'mouseenter', () => L.DomUtil.addClass(container, 'legend-expanded'));
         L.DomEvent.on(container, 'mouseleave', () => L.DomUtil.removeClass(container, 'legend-expanded'));
         L.DomEvent.disableClickPropagation(container);
         return container;
@@ -96,7 +95,6 @@ function updateLegend() {
 const filterBtn = document.getElementById('toggle-filters');
 filterBtn.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg><span class="btn-text">Filtres</span>`;
 
-// --- DONNÉES ET MARQUEURS ---
 let allData = [], markers = [], markersDict = {}, polygonsDict = {};
 const polygonsLayerGroup = L.layerGroup().addTo(map);
 const ardennesLayerGroup = L.layerGroup().addTo(map);
@@ -116,7 +114,6 @@ function addMarkers(rows) {
         const lat = parseFloat(row.latitude), lon = parseFloat(row.longitude);
         if (isNaN(lat)) return;
 
-        // Préparation des données complexes (Récupéré de ton script précédent)
         const pollutionClean = (row.sol_pollution_existe || "").replace(/pollution /gi, "").trim();
         const pRaw = row.proprio_nom || "";
         const pArray = pRaw.split('|').map(p => p.trim() === "_X_" ? "(anonymisé)" : p.trim());
@@ -134,7 +131,6 @@ function addMarkers(rows) {
             riseOnHover: true
         });
 
-        // Contenu de la popup (Version Complète)
         const popupContent = `
             <div class="popup-header-site">${row.site_nom || 'Friche'}</div>
             <span class="popup-commune">${row.comm_nom || ''}</span>
@@ -184,7 +180,6 @@ function updateMap(shouldFit = false) {
     if (shouldFit) fitMap();
 }
 
-// --- FILTRES ---
 function getFilteredData() {
     const sMin = parseFloat(document.getElementById('surface-min').value) || 0;
     const sMax = parseFloat(document.getElementById('surface-max').value) || Infinity;
@@ -225,7 +220,6 @@ function fitMap() {
     if (coords.length > 0) map.fitBounds(L.latLngBounds(coords), { padding: [50, 50], maxZoom: 15 });
 }
 
-// --- GÉOMÉTRIE ---
 function loadArdennesOutline() {
     fetch('ardennes.geojson').then(r => r.json()).then(g => {
         L.geoJSON(g, { style: { color: '#ffffff', weight: 5, opacity: 1, fillOpacity: 0, interactive: false } }).addTo(ardennesLayerGroup);
@@ -243,10 +237,10 @@ function loadGeoJsonData() {
     });
 }
 
-// UI
 const panel = document.getElementById('filters-panel');
 document.getElementById('toggle-filters').addEventListener('click', (e) => { e.stopPropagation(); panel.classList.add('open'); });
 document.getElementById('close-filters').addEventListener('click', () => panel.classList.remove('open'));
 map.on('click', () => { panel.classList.remove('open'); });
+
 map.on('overlayadd', (e) => { if (e.layer === cadastreLayer) isCadastreChecked = true; updateMap(); });
 map.on('overlayremove', (e) => { if (e.layer === cadastreLayer) isCadastreChecked = false; updateMap(); });
