@@ -28,14 +28,26 @@ const map = L.map('map', {
     minZoom: 8, maxZoom: 18, maxBounds: bounds, maxBoundsViscosity: 1.0, layers: [osmHot]
 }).setView([49.7, 4.7], 9);
 
-// Contrôles Leaflet
+// Contrôles
 const baseMaps = { "OSM Humanitarian": osmHot, "OSM Standard": osmStandard, "Plan IGN": ignCarte, "Vue aérienne": ignOrtho };
 const overlayMaps = { "Cadastre": cadastreLayer };
 const layerControl = L.control.layers(baseMaps, overlayMaps, { collapsed: true, position: 'bottomleft' }).addTo(map);
 
-// Injection SVG Couches
+// --- Gestion Propre de l'Icône Couches (Sans superposition) ---
+const layerControlContainer = document.querySelector('.leaflet-control-layers');
 const layerBtn = document.querySelector('.leaflet-control-layers-toggle');
-layerBtn.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M7 10.5 L15 5.5 L23 10.5 L15 15.5 Z"/><path d="M24.34 14.16 L15 20 L5.66 14.16"/><path d="M24.34 18.66 L15 24.5 L5.66 18.66"/></svg>`;
+
+function updateLayerIcon() {
+    const isExpanded = layerControlContainer.classList.contains('leaflet-control-layers-expanded');
+    if (isExpanded) {
+        layerBtn.innerHTML = ''; 
+    } else {
+        layerBtn.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M7 10.5 L15 5.5 L23 10.5 L15 15.5 Z"/><path d="M24.34 14.16 L15 20 L5.66 14.16"/><path d="M24.34 18.66 L15 24.5 L5.66 18.66"/></svg>`;
+    }
+}
+updateLayerIcon();
+const observer = new MutationObserver(() => updateLayerIcon());
+observer.observe(layerControlContainer, { attributes: true, attributeFilter: ['class'] });
 
 // Légende Dynamique
 let legendContent, legendButton;
@@ -58,7 +70,7 @@ const LegendControl = L.Control.extend({
         L.DomEvent.on(legendButton, 'click', function(e) {
             L.DomEvent.stop(e);
             if (legendContent.style.display === 'none') {
-                document.querySelector('.leaflet-control-layers').classList.remove('leaflet-control-layers-expanded');
+                layerControlContainer.classList.remove('leaflet-control-layers-expanded');
                 legendContent.style.display = 'block'; legendButton.classList.add('active');
             } else { closeLegend(); }
         });
@@ -69,10 +81,10 @@ const LegendControl = L.Control.extend({
 map.addControl(new LegendControl());
 
 function closeLegend() { if(legendContent) { legendContent.style.display = 'none'; legendButton.classList.remove('active'); } }
-document.querySelector('.leaflet-control-layers').addEventListener('mouseenter', closeLegend);
+layerControlContainer.addEventListener('mouseenter', closeLegend);
 map.on('click', closeLegend);
 
-// Logique de zoom et picto
+// Logique Données
 function createSvgPicto(pictocol) {
     return `<svg width="19.2" height="19.2" version="1.1" xmlns="http://www.w3.org/2000/svg"><rect x="3.6" y="3.6" width="12" height="12" rx="3" fill="${pictocol}" stroke="#ffffff" stroke-width="1.6"/></svg>`;
 }
@@ -97,8 +109,7 @@ function addMarkers(rows) {
         const marker = L.marker([lat, lon], {
             icon: L.divIcon({ className: "picto", html: createSvgPicto(getColorForStatus(row.site_statut)), iconSize: [19.2, 19.2], iconAnchor: [9.6, 9.6], popupAnchor: [0, -10] })
         });
-        const imagePath = `photos/${row.site_id}.webp`;
-        marker.bindPopup(`<div class="popup-header-site">${row.site_nom || 'Friche'}</div><span class="popup-commune">${row.comm_nom || ''}</span><hr class="popup-sep"><div class="img-container"><img src="${imagePath}" class="popup-img" onerror="this.parentElement.style.display='none'"/></div><div class="popup-details"><div><strong>Statut :</strong> ${row.site_statut}</div><div><strong>Surface :</strong> ${row.unite_fonciere_surface ? row.unite_fonciere_surface.toLocaleString('fr-FR') + ' m²' : 'Inconnue'}</div></div>`);
+        marker.bindPopup(`<div class="popup-header-site">${row.site_nom || 'Friche'}</div><span class="popup-commune">${row.comm_nom || ''}</span><hr class="popup-sep"><div class="img-container"><img src="photos/${row.site_id}.webp" class="popup-img" onerror="this.parentElement.style.display='none'"/></div><div class="popup-details"><div><strong>Statut :</strong> ${row.site_statut}</div><div><strong>Surface :</strong> ${row.unite_fonciere_surface ? row.unite_fonciere_surface.toLocaleString('fr-FR') + ' m²' : 'Inconnue'}</div></div>`);
         marker.bindTooltip(row.site_nom || 'Friche', { direction: 'top', offset: [0, -15] });
         markers.push({ marker, data: row });
         if (row.site_id) markersDict[row.site_id] = marker;
@@ -106,23 +117,21 @@ function addMarkers(rows) {
 }
 
 function updateMap(shouldFit = false) {
-    const baseFiltered = getFilteredData();
-    const currentZoom = map.getZoom();
-    if (isCadastreChecked && currentZoom >= CADASTRE_ZOOM_THRESHOLD) { if (!map.hasLayer(cadastreLayer)) cadastreLayer.addTo(map); }
-    else { if (map.hasLayer(cadastreLayer)) map.removeLayer(cadastreLayer); }
-
+    const data = getFilteredData();
+    const zoom = map.getZoom();
+    if (isCadastreChecked && zoom >= CADASTRE_ZOOM_THRESHOLD) { if(!map.hasLayer(cadastreLayer)) cadastreLayer.addTo(map); }
+    else { if(map.hasLayer(cadastreLayer)) map.removeLayer(cadastreLayer); }
     polygonsLayerGroup.clearLayers();
     markers.forEach(item => {
         const d = item.data;
-        let visible = baseFiltered.includes(d);
-        if (visible && document.getElementById('filter-epci').value && d.epci_nom !== document.getElementById('filter-epci').value) visible = false;
-        if (visible && document.getElementById('filter-commune').value && d.comm_nom !== document.getElementById('filter-commune').value) visible = false;
-        if (visible && document.getElementById('filter-friche').value && d.site_nom !== document.getElementById('filter-friche').value) visible = false;
-
-        if (visible) {
+        let vis = data.includes(d);
+        if (vis && document.getElementById('filter-epci').value && d.epci_nom !== document.getElementById('filter-epci').value) vis = false;
+        if (vis && document.getElementById('filter-commune').value && d.comm_nom !== document.getElementById('filter-commune').value) vis = false;
+        if (vis && document.getElementById('filter-friche').value && d.site_nom !== document.getElementById('filter-friche').value) vis = false;
+        if (vis) {
             if (!map.hasLayer(item.marker)) item.marker.addTo(map);
-            if (currentZoom >= ZOOM_THRESHOLD && d.site_id && polygonsDict[d.site_id]) polygonsLayerGroup.addLayer(polygonsDict[d.site_id]);
-        } else { map.removeLayer(item.marker); }
+            if (zoom >= ZOOM_THRESHOLD && d.site_id && polygonsDict[d.site_id]) polygonsLayerGroup.addLayer(polygonsDict[d.site_id]);
+        } else map.removeLayer(item.marker);
     });
     if (shouldFit) fitMap();
 }
@@ -144,50 +153,49 @@ function initCascadingFilters() {
 
 function updateFilterOptions() {
     const data = getFilteredData();
-    populateSelect(document.getElementById('filter-epci'), data, 'epci_nom', '- Tous les EPCI -');
-    let fComm = data;
-    if (document.getElementById('filter-epci').value) fComm = fComm.filter(d => d.epci_nom === document.getElementById('filter-epci').value);
-    populateSelect(document.getElementById('filter-commune'), fComm, 'comm_nom', '- Toutes les communes -');
-    let fFriche = fComm;
-    if (document.getElementById('filter-commune').value) fFriche = fFriche.filter(d => d.comm_nom === document.getElementById('filter-commune').value);
-    populateSelect(document.getElementById('filter-friche'), fFriche, 'site_nom', '- Toutes les friches -');
+    const epci = document.getElementById('filter-epci');
+    const com = document.getElementById('filter-commune');
+    const fri = document.getElementById('filter-friche');
+    populateSelect(epci, data, 'epci_nom', '- Tous les EPCI -');
+    let dC = data; if (epci.value) dC = dC.filter(d => d.epci_nom === epci.value);
+    populateSelect(com, dC, 'comm_nom', '- Toutes les communes -');
+    let dF = dC; if (com.value) dF = dF.filter(d => d.comm_nom === com.value);
+    populateSelect(fri, dF, 'site_nom', '- Toutes les friches -');
     updateMap(true);
 }
 
 function populateSelect(s, d, k, t) {
-    const val = s.value;
-    s.innerHTML = `<option value="">${t}</option>`;
-    const opts = [...new Set(d.map(i => i[k]))].filter(Boolean).sort();
-    opts.forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o; s.appendChild(opt); });
-    if ([...s.options].some(o => o.value === val)) s.value = val;
+    const v = s.value; s.innerHTML = `<option value="">${t}</option>`;
+    const o = [...new Set(d.map(i => i[k]))].filter(Boolean).sort();
+    o.forEach(x => { const opt = document.createElement('option'); opt.value = x; opt.textContent = x; s.appendChild(opt); });
+    if ([...s.options].some(x => x.value === v)) s.value = v;
 }
 
 function fitMap() {
-    const visibleCoords = markers.filter(item => map.hasLayer(item.marker)).map(item => item.marker.getLatLng());
-    if (visibleCoords.length > 0) map.fitBounds(L.latLngBounds(visibleCoords), { padding: [50, 50], maxZoom: 15 });
+    const coords = markers.filter(i => map.hasLayer(i.marker)).map(i => i.marker.getLatLng());
+    if (coords.length > 0) map.fitBounds(L.latLngBounds(coords), { padding: [50, 50], maxZoom: 15 });
 }
 
 function loadArdennesOutline() {
-    fetch('ardennes.geojson').then(r => r.json()).then(geojson => {
-        L.geoJSON(geojson, { style: { color: '#ffffff', weight: 5, opacity: 1, fillOpacity: 0, interactive: false } }).addTo(ardennesLayerGroup);
-        L.geoJSON(geojson, { style: { color: '#422d58', weight: 2, opacity: 1, fillOpacity: 0, interactive: false } }).addTo(ardennesLayerGroup);
+    fetch('ardennes.geojson').then(r => r.json()).then(g => {
+        L.geoJSON(g, { style: { color: '#ffffff', weight: 5, opacity: 1, fillOpacity: 0, interactive: false } }).addTo(ardennesLayerGroup);
+        L.geoJSON(g, { style: { color: '#422d58', weight: 2, opacity: 1, fillOpacity: 0, interactive: false } }).addTo(ardennesLayerGroup);
     });
 }
 
 function loadGeoJsonData() {
-    fetch('friches.geojson').then(r => r.json()).then(geojson => {
-        L.geoJSON(geojson, {
-            style: (f) => { const row = allData.find(d => d.site_id === f.properties.site_id); return { color: row ? getColorForStatus(row.site_statut) : '#3388ff', weight: 2, opacity: 1, fillOpacity: 0.3 }; },
-            onEachFeature: (f, layer) => { if (f.properties.site_id) { polygonsDict[f.properties.site_id] = layer; layer.on('click', (e) => { L.DomEvent.stopPropagation(e); if(markersDict[f.properties.site_id]) markersDict[f.properties.site_id].openPopup(); }); } }
+    fetch('friches.geojson').then(r => r.json()).then(g => {
+        L.geoJSON(g, {
+            style: (f) => { const r = allData.find(d => d.site_id === f.properties.site_id); return { color: r ? getColorForStatus(r.site_statut) : '#3388ff', weight: 2, opacity: 1, fillOpacity: 0.3 }; },
+            onEachFeature: (f, l) => { if (f.properties.site_id) { polygonsDict[f.properties.site_id] = l; l.on('click', (e) => { L.DomEvent.stopPropagation(e); if(markersDict[f.properties.site_id]) markersDict[f.properties.site_id].openPopup(); }); } }
         });
         updateMap(false);
     });
 }
 
-// UI Panel
 const panel = document.getElementById('filters-panel');
 document.getElementById('toggle-filters').addEventListener('click', (e) => { e.stopPropagation(); panel.classList.add('open'); });
 document.getElementById('close-filters').addEventListener('click', () => panel.classList.remove('open'));
-map.on('click', () => panel.classList.remove('open'));
+map.on('click', () => { panel.classList.remove('open'); closeLegend(); });
 map.on('overlayadd', (e) => { if (e.layer === cadastreLayer) isCadastreChecked = true; updateMap(); });
 map.on('overlayremove', (e) => { if (e.layer === cadastreLayer) isCadastreChecked = false; updateMap(); });
