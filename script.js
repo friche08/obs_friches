@@ -13,6 +13,7 @@ function getColorForStatus(s) {
     return statusColors[s] || "#777";
 }
 
+// 1. Fonctions de création des pictogrammes (TES ANIMATIONS REPLACÉES ICI)
 function createSvgPicto(pictocol) {
     return `<svg width="19.2" height="19.2" version="1.1" xmlns="http://www.w3.org/2000/svg">
       <rect x="3.6" y="3.6" width="12" height="12" rx="3" fill="${pictocol}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round">
@@ -29,6 +30,7 @@ function createSvgPicto(pictocol) {
       </rect></svg>`;
 }
 
+// configuration des couches
 const osmHot = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
 const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
 const ignCarte = L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image%2Fpng', { attribution: '&copy; IGN' });
@@ -41,24 +43,23 @@ const cadastreLayer = L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUE
 let isCadastreChecked = false;
 const map = L.map('map', {
     minZoom: 8, maxZoom: 18, maxBounds: bounds, maxBoundsViscosity: 1.0, layers: [osmHot],
-    zoomControl: false 
-}).setView([49.7, 4.7], 9);
+    zoomControl: false // Désactivé ici pour le replacer manuellement en bas à droite
+});
 
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
+// --- GESTION DES COUCHES ---
 const baseMaps = { "OSM Humanitarian": osmHot, "OSM Standard": osmStandard, "Plan IGN": ignCarte, "Vue aérienne": ignOrtho };
 const overlayMaps = { "Cadastre": cadastreLayer };
 
-// Retour au contrôle de couches standard
 const layerControl = L.control.layers(baseMaps, overlayMaps, { collapsed: true, position: 'bottomleft' }).addTo(map);
 
-// Ré-injection de l'icône SVG pour le bouton Couches
+// Injection Icône Couches SVG
+const layerControlContainer = document.querySelector('.leaflet-control-layers');
 const layerBtn = document.querySelector('.leaflet-control-layers-toggle');
-if(layerBtn) {
-    layerBtn.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M7 10.5 L15 5.5 L23 10.5 L15 15.5 Z" stroke="currentColor"/><path d="M24.34 14.16 L15 20 L5.66 14.16" stroke="currentColor"/><path d="M24.34 18.66 L15 24.5 L5.66 18.66" stroke="currentColor"/></svg>`;
-}
+layerBtn.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M7 10.5 L15 5.5 L23 10.5 L15 15.5 Z" stroke="currentColor"/><path d="M24.34 14.16 L15 20 L5.66 14.16" stroke="currentColor"/><path d="M24.34 18.66 L15 24.5 L5.66 18.66" stroke="currentColor"/></svg>`;
 
-// Légende avec comportement au survol
+// --- LÉGENDE DYNAMIQUE ---
 const LegendControl = L.Control.extend({
     options: { position: 'bottomleft' },
     onAdd: function() {
@@ -66,11 +67,14 @@ const LegendControl = L.Control.extend({
         const button = L.DomUtil.create('a', 'legend-toggle-btn', container);
         button.href = '#';
         button.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="7" width="5" height="5" stroke="currentColor"/><circle cx="9.5" cy="20" r="2.5" stroke="currentColor"/><path d="M16 8 H24 M16 15 H24 M16 22 H24" stroke="currentColor"/></svg>`;
-        
+
         const content = L.DomUtil.create('div', 'legend-content', container);
         content.id = 'legend-dynamic-content';
 
-        L.DomEvent.on(container, 'mouseenter', () => L.DomUtil.addClass(container, 'legend-expanded'));
+        L.DomEvent.on(container, 'mouseenter', () => {
+            L.DomUtil.addClass(container, 'legend-expanded');
+            layerControlContainer.classList.remove('leaflet-control-layers-expanded');
+        });
         L.DomEvent.on(container, 'mouseleave', () => L.DomUtil.removeClass(container, 'legend-expanded'));
         L.DomEvent.disableClickPropagation(container);
         return container;
@@ -84,6 +88,7 @@ function updateLegend() {
     contentDiv.innerHTML = '';
     const order = ["friche avec projet", "friche sans projet", "friche reconvertie", "friche potentielle"];
     const checkedStatuses = Array.from(document.querySelectorAll('.checkbox-list input:checked')).map(cb => cb.value);
+    
     order.forEach(status => {
         if(checkedStatuses.includes(status)) {
             const item = L.DomUtil.create('div', 'legend-item', contentDiv);
@@ -92,9 +97,11 @@ function updateLegend() {
     });
 }
 
+// --- BOUTON FILTRE (BURGER) ---
 const filterBtn = document.getElementById('toggle-filters');
 filterBtn.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg><span class="btn-text">Filtres</span>`;
 
+// --- DONNÉES ET MARQUEURS ---
 let allData = [], markers = [], markersDict = {}, polygonsDict = {};
 const polygonsLayerGroup = L.layerGroup().addTo(map);
 const ardennesLayerGroup = L.layerGroup().addTo(map);
@@ -113,41 +120,50 @@ function addMarkers(rows) {
     rows.forEach(row => {
         const lat = parseFloat(row.latitude), lon = parseFloat(row.longitude);
         if (isNaN(lat)) return;
-
-        const pollutionClean = (row.sol_pollution_existe || "").replace(/pollution /gi, "").trim();
-        const pRaw = row.proprio_nom || "";
-        const pArray = pRaw.split('|').map(p => p.trim() === "_X_" ? "(anonymisé)" : p.trim());
-        const labelProprio = pArray.length > 1 ? "Propriétaires" : "Propriétaire";
-        const imagePath = `photos/${row.site_id}.webp`;
-
         const marker = L.marker([lat, lon], {
-            icon: L.divIcon({ 
-                className: "picto", 
-                html: createSvgPicto(getColorForStatus(row.site_statut)), 
-                iconSize: [19.2, 19.2], 
-                iconAnchor: [9.6, 9.6], 
-                popupAnchor: [0, -10] 
-            }),
+            icon: L.divIcon({ className: "picto", html: createSvgPicto(getColorForStatus(row.site_statut)), iconSize: [19.2, 19.2], iconAnchor: [9.6, 9.6], popupAnchor: [0, -10] }),
             riseOnHover: true
         });
+        
+        // Popup
+        const pollutionClean = (row.sol_pollution_existe || "")
+    .replace(/pollution /gi, "")
+    .trim();
 
-        const popupContent = `
-            <div class="popup-header-site">${row.site_nom || 'Friche'}</div>
-            <span class="popup-commune">${row.comm_nom || ''}</span>
-            <hr class="popup-sep">
-            <div class="img-container">
-                <img src="${imagePath}" class="popup-img" onerror="this.parentElement.style.display='none'"/>
-            </div>
-            <div class="popup-details">
-                <div><strong>Statut :</strong> ${row.site_statut}</div>
-                <div><strong>Surface :</strong> ${row.unite_fonciere_surface ? row.unite_fonciere_surface.toLocaleString('fr-FR') + ' m²' : 'Inconnue'}</div>
-                <div><strong>Pollution :</strong> ${pollutionClean || 'Inconnue'}</div>
-                <div><strong>${labelProprio} :</strong> ${pArray.join(', ')}</div>
-            </div>`;
+const pRaw = row.proprio_nom || "";
+const pArray = pRaw
+    .split('|')
+    .map(p => p.trim() === "_X_" ? "(anonymisé)" : p.trim());
+const labelProprio = pArray.length > 1 ? "Propriétaires" : "Propriétaire";
 
-        marker.bindPopup(popupContent, { minWidth: 300, maxWidth: 300 });
+const popupContent = `
+    <div class="popup-header-site">${row.site_nom || 'Friche'}</div>
+    <span class="popup-commune">${row.comm_nom || ''}</span>
+    <hr class="popup-sep">
+    <div class="img-container">
+        <img src="photos/${row.site_id}.webp"
+             class="popup-img"
+             onerror="this.parentElement.style.display='none'"/>
+    </div>
+    <div class="popup-details">
+        <div><strong>Statut :</strong> ${row.site_statut}</div>
+        <div><strong>Surface :</strong> ${
+            row.unite_fonciere_surface
+                ? row.unite_fonciere_surface.toLocaleString('fr-FR') + ' m²'
+                : 'Inconnue'
+        }</div>
+        <div><strong>Pollution :</strong> ${pollutionClean || 'Inconnue'}</div>
+        <div><strong>${labelProprio} :</strong> ${pArray.join(', ')}</div>
+    </div>
+`;
+
+marker.bindPopup(popupContent, {
+    minWidth: 300,
+    maxWidth: 300
+});
+
         marker.bindTooltip(row.site_nom || 'Friche', { direction: 'top', offset: [0, -15] });
-
+        
         markers.push({ marker, data: row });
         if (row.site_id) markersDict[row.site_id] = marker;
     });
@@ -157,10 +173,7 @@ function updateMap(shouldFit = false) {
     const data = getFilteredData();
     updateLegend();
     const zoom = map.getZoom();
-    const epciVal = document.getElementById('filter-epci').value;
-    const commVal = document.getElementById('filter-commune').value;
-    const fricheVal = document.getElementById('filter-friche').value;
-
+    
     if (isCadastreChecked && zoom >= CADASTRE_ZOOM_THRESHOLD) { if(!map.hasLayer(cadastreLayer)) cadastreLayer.addTo(map); }
     else { if(map.hasLayer(cadastreLayer)) map.removeLayer(cadastreLayer); }
     
@@ -168,9 +181,9 @@ function updateMap(shouldFit = false) {
     markers.forEach(item => {
         const d = item.data;
         let vis = data.includes(d);
-        if (vis && epciVal && d.epci_nom !== epciVal) vis = false;
-        if (vis && commVal && d.comm_nom !== commVal) vis = false;
-        if (vis && fricheVal && d.site_nom !== fricheVal) vis = false;
+        if (vis && document.getElementById('filter-epci').value && d.epci_nom !== document.getElementById('filter-epci').value) vis = false;
+        if (vis && document.getElementById('filter-commune').value && d.comm_nom !== document.getElementById('filter-commune').value) vis = false;
+        if (vis && document.getElementById('filter-friche').value && d.site_nom !== document.getElementById('filter-friche').value) vis = false;
         
         if (vis) {
             if (!map.hasLayer(item.marker)) item.marker.addTo(map);
@@ -180,6 +193,7 @@ function updateMap(shouldFit = false) {
     if (shouldFit) fitMap();
 }
 
+// --- FILTRES ---
 function getFilteredData() {
     const sMin = parseFloat(document.getElementById('surface-min').value) || 0;
     const sMax = parseFloat(document.getElementById('surface-max').value) || Infinity;
@@ -220,6 +234,7 @@ function fitMap() {
     if (coords.length > 0) map.fitBounds(L.latLngBounds(coords), { padding: [50, 50], maxZoom: 15 });
 }
 
+// --- GÉOMÉTRIE ---
 function loadArdennesOutline() {
     fetch('ardennes.geojson').then(r => r.json()).then(g => {
         L.geoJSON(g, { style: { color: '#ffffff', weight: 5, opacity: 1, fillOpacity: 0, interactive: false } }).addTo(ardennesLayerGroup);
@@ -237,10 +252,10 @@ function loadGeoJsonData() {
     });
 }
 
+// UI
 const panel = document.getElementById('filters-panel');
 document.getElementById('toggle-filters').addEventListener('click', (e) => { e.stopPropagation(); panel.classList.add('open'); });
 document.getElementById('close-filters').addEventListener('click', () => panel.classList.remove('open'));
 map.on('click', () => { panel.classList.remove('open'); });
-
 map.on('overlayadd', (e) => { if (e.layer === cadastreLayer) isCadastreChecked = true; updateMap(); });
 map.on('overlayremove', (e) => { if (e.layer === cadastreLayer) isCadastreChecked = false; updateMap(); });
