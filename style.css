@@ -49,12 +49,13 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
     border: 1px solid var(--grey-border) !important;
     border-radius: 4px !important;
     display: flex !important; align-items: center; justify-content: center;
-    width: 34px !important; height: 34px !important;
+    width: 30px !important; height: 30px !important; /* Taille réduite demandée */
     box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
     transition: all 0.2s ease-in-out; cursor: pointer;
+    background-image: none !important; /* Supprime l'icône Leaflet par défaut */
 }
 .leaflet-bar a svg, .leaflet-control-layers-toggle svg, .legend-toggle-btn svg {
-    width: 24px; height: 24px; stroke: currentColor;
+    width: 22px !important; height: 22px !important; stroke: currentColor;
 }
 .leaflet-bar a:hover, .leaflet-control-layers-toggle:hover, .legend-toggle-btn:hover {
     background-color: var(--grey-bg-hover) !important;
@@ -86,12 +87,23 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 #filters-panel.open { transform: translateX(0); }
 .panel-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
 #close-filters { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
-.panel-content { padding: 0 20px 20px 20px; overflow-y: auto; }
+
+/* Fix des inputs de surface pour éviter le débordement */
+.panel-content { padding: 0 20px 20px 20px; overflow-y: auto; overflow-x: hidden; }
+.surface-inputs { display: flex; gap: 10px; width: 100%; box-sizing: border-box; }
+.surface-inputs input { flex: 1; min-width: 0; }
+
 .status-fieldset { border: 1px solid #e5e5e5; background: #f6f6f6; padding: 15px; margin-bottom: 20px; }
 .checkbox-list { display: flex; flex-direction: column; gap: 10px; }
-input[type="checkbox"] { accent-color: var(--blue-marianne); }
-select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid #e5e5e5; }
-select:focus, input:focus { outline: 2px solid var(--blue-marianne-hover); border-color: var(--blue-marianne); }
+
+/* Style des inputs Coché (Accent color et retrait du contour bleu) */
+input[type="checkbox"], input[type="radio"] { 
+    accent-color: var(--blue-marianne); 
+    outline: none !important; 
+    box-shadow: none !important; 
+}
+select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid #e5e5e5; box-sizing: border-box; }
+select:focus, input:focus { outline: none !important; border: 2px solid var(--blue-marianne-hover); }
 
 /* Popups et Tooltips */
 .leaflet-popup-content { width: 300px !important; margin: 15px !important; }
