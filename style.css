@@ -46,61 +46,53 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
     color: #fff !important; border: none; padding: 10px 14px;
     font-weight: 700; cursor: pointer; border-radius: 4px; transition: background 0.2s;
     white-space: nowrap;
+    display: flex; align-items: center; gap: 8px; /* Espace entre icone et texte sur PC */
 }
 #toggle-filters:hover { background-color: var(--blue-marianne-hover) !important; }
 
-/* --- MEDIA QUERY MOBILE (Tablettes & Smartphones < 768px) --- */
+/* SVG du burger dans le bouton filtres */
+#toggle-filters svg {
+    width: 20px; height: 20px; fill: currentColor;
+}
+
+/* --- MEDIA QUERY MOBILE (< 768px) --- */
 @media (max-width: 768px) {
-    /* Header compact */
     .logo-pref { width: 60px; }
     .separator-v { height: 40px; margin: 0 10px; }
-    
-    /* Titre réduit pour ne pas chevaucher le bouton */
     .title-main { font-size: 1.1rem; line-height: 1.2; }
     .title-sub { font-size: 0.65rem; }
     
-    /* On cache le mot "Filtres" pour ne garder que l'icône si besoin, ou juste réduire la taille */
-    .btn-text { display: none; }
-    #toggle-filters { padding: 10px; } /* Bouton carré sur mobile */
+    /* Bouton Mobile "Carré Parfait" */
+    .btn-text { display: none; } /* Cache le texte "Filtres" */
+    #toggle-filters { 
+        padding: 0 !important; /* Pas de padding interne */
+        width: 40px !important; /* Largeur fixe */
+        height: 40px !important; /* Hauteur fixe */
+        display: flex !important;
+        justify-content: center !important; /* Centre horizontalement */
+        align-items: center !important; /* Centre verticalement */
+    }
 }
 
 /* ==========================================================================
-   3. CARTE (TAILLE ADAPTATIVE)
+   3. CARTE
    ========================================================================== */
-#map { 
-    width: 90%; 
-    height: 82vh; /* PC */
-    margin: 0 auto; 
-    border: 1px solid #e5e5e5; 
-    z-index: 1; 
-}
-
-@media (max-width: 768px) {
-    #map { height: 80vh; } /* Mobile */
-}
+#map { width: 90%; height: 82vh; margin: 0 auto; border: 1px solid #e5e5e5; z-index: 1; }
+@media (max-width: 768px) { #map { height: 80vh; } }
 
 /* ==========================================================================
-   4. LEAFLET CONTROLS (CLEAN DESIGN - SANS LISERÉ)
+   4. BOUTONS DE CARTE (CLEAN & FUSIONNÉS)
    ========================================================================== */
-.leaflet-bar { border: none !important; }
+.leaflet-bar { border: none !important; box-shadow: none !important; }
 
-/* Suppression forcée du liseré gris par défaut de Leaflet (Touch & Desktop) */
-.leaflet-touch .leaflet-bar, 
-.leaflet-touch .leaflet-control-layers,
-.leaflet-bar a, 
-.leaflet-control-layers-toggle, 
-.legend-toggle-btn {
-    border: 1px solid var(--grey-border) !important;
-    background-clip: padding-box;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
-}
-
+/* Style de base commun (sans bordure grise, juste ombre et blanc) */
 .leaflet-bar a, 
 .leaflet-control-layers-toggle, 
 .legend-toggle-btn {
     background-color: #ffffff !important;
     color: var(--blue-marianne) !important;
-    border-radius: 4px !important;
+    border: none !important; /* PLUS DE BORDURE GRISE */
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important; /* Ombre un peu plus marquée pour détacher du fond */
     display: flex !important; align-items: center; justify-content: center;
     width: 30px !important; height: 30px !important;
     transition: all 0.2s ease-in-out; cursor: pointer;
@@ -108,51 +100,75 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 }
 
 /* SVG Icones */
-.leaflet-bar a svg, 
-.leaflet-control-layers-toggle svg, 
-.legend-toggle-btn svg {
+.leaflet-bar a svg, .leaflet-control-layers-toggle svg, .legend-toggle-btn svg {
     width: 22px !important; height: 22px !important; stroke: currentColor;
 }
 
-/* Hover */
-.leaflet-bar a:hover, 
-.leaflet-control-layers-toggle:hover, 
-.legend-toggle-btn:hover {
+/* Hover global */
+.leaflet-bar a:hover, .leaflet-control-layers-toggle:hover, .legend-toggle-btn:hover {
     background-color: var(--grey-bg-hover) !important;
     color: var(--blue-marianne-hover) !important;
 }
 
+/* --- SPÉCIFIQUE ZOOM (Fusion en un seul bloc) --- */
+.leaflet-control-zoom {
+    display: flex; flex-direction: column;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important; /* L'ombre est sur le conteneur */
+    border-radius: 4px !important;
+    background: #fff;
+}
+
+/* Zoom In (Haut) */
+.leaflet-control-zoom-in {
+    border-radius: 4px 4px 0 0 !important; /* Arrondi haut seulement */
+    box-shadow: none !important; /* Pas d'ombre individuelle */
+    border-bottom: 1px solid #f0f0f0 !important; /* Petit trait de séparation interne très léger */
+    height: 30px !important;
+    margin-bottom: 0 !important;
+}
+
+/* Zoom Out (Bas) */
+.leaflet-control-zoom-out {
+    border-radius: 0 0 4px 4px !important; /* Arrondi bas seulement */
+    box-shadow: none !important;
+    height: 30px !important;
+    margin-top: 0 !important;
+}
+
+/* --- BOUTONS ISOLÉS (Couches & Légende) --- */
+/* Eux gardent leur arrondi complet car ils sont seuls */
+.leaflet-control-layers-toggle, 
+.legend-toggle-btn {
+    border-radius: 4px !important;
+}
+
 /* ==========================================================================
-   5. PANNEAUX OUVERTS (COUCHES & LÉGENDE HARMONISÉS)
+   5. PANNEAUX OUVERTS
    ========================================================================== */
 .leaflet-control-layers-expanded, 
 .custom-legend-container.legend-expanded {
     padding: 10px !important;
     background: #fff !important;
-    border: 1px solid var(--grey-border) !important;
+    border: none !important; /* Pas de bordure grise */
     border-radius: 4px !important;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important; /* Ombre de panneau */
     display: flex; flex-direction: column;
 }
 
-/* Cache le bouton toggle quand le panneau est ouvert */
 .leaflet-control-layers-expanded .leaflet-control-layers-toggle,
-.legend-expanded .legend-toggle-btn {
-    display: none !important;
-}
+.legend-expanded .legend-toggle-btn { display: none !important; }
 
-/* Configuration Légende */
+/* Légende */
 .custom-legend-container { background: transparent; border: none; box-shadow: none; }
 .legend-content { display: none; }
 .legend-expanded .legend-content { display: block; }
-
 .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .legend-item:last-child { margin-bottom: 0; }
 .legend-swatch { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
 .legend-label { font-size: 0.85rem; color: #333; white-space: nowrap; }
 
 /* ==========================================================================
-   6. FILTRES LATÉRAUX & FORMULAIRES
+   6. FILTRES & FORMULAIRES
    ========================================================================== */
 #filters-panel {
     position: fixed; top: 0; right: 0; width: 350px; max-width: 85%; height: 100%;
