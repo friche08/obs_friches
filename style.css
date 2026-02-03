@@ -34,43 +34,29 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 
 .header-logo-block { display: flex; align-items: center; }
 
-/* --- Styles par défaut (Desktop) --- */
 .logo-pref { width: 80px; height: auto; }
 .separator-v { width: 1px; height: 50px; background-color: #e5e5e5; margin: 0 15px; }
 .title-main { margin: 0; color: var(--blue-marianne); font-weight: 700; font-size: 1.8rem; line-height: 1.4; }
 .title-sub { margin: 0; font-weight: 300; font-size: 0.75rem; }
 
-/* --- Bouton Filtres --- */
 #toggle-filters {
     background-color: var(--blue-marianne) !important;
     color: #fff !important; border: none; padding: 10px 14px;
     font-weight: 700; cursor: pointer; border-radius: 4px; transition: background 0.2s;
-    white-space: nowrap;
-    display: flex; align-items: center; gap: 8px; /* Espace entre icone et texte sur PC */
+    white-space: nowrap; display: flex; align-items: center; gap: 8px;
 }
 #toggle-filters:hover { background-color: var(--blue-marianne-hover) !important; }
+#toggle-filters svg { width: 20px; height: 20px; fill: currentColor; }
 
-/* SVG du burger dans le bouton filtres */
-#toggle-filters svg {
-    width: 20px; height: 20px; fill: currentColor;
-}
-
-/* --- MEDIA QUERY MOBILE (< 768px) --- */
 @media (max-width: 768px) {
     .logo-pref { width: 60px; }
     .separator-v { height: 40px; margin: 0 10px; }
     .title-main { font-size: 1.1rem; line-height: 1.2; }
     .title-sub { font-size: 0.65rem; }
-    
-    /* Bouton Mobile "Carré Parfait" */
-    .btn-text { display: none; } /* Cache le texte "Filtres" */
+    .btn-text { display: none; }
     #toggle-filters { 
-        padding: 0 !important; /* Pas de padding interne */
-        width: 40px !important; /* Largeur fixe */
-        height: 40px !important; /* Hauteur fixe */
-        display: flex !important;
-        justify-content: center !important; /* Centre horizontalement */
-        align-items: center !important; /* Centre verticalement */
+        padding: 0 !important; width: 40px !important; height: 40px !important;
+        display: flex !important; justify-content: center !important; align-items: center !important;
     }
 }
 
@@ -81,65 +67,66 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 @media (max-width: 768px) { #map { height: 80vh; } }
 
 /* ==========================================================================
-   4. BOUTONS DE CARTE (CLEAN & FUSIONNÉS)
+   4. BOUTONS DE CARTE (NETTOYAGE COMPLET DES LISERÉS)
    ========================================================================== */
-.leaflet-bar { border: none !important; box-shadow: none !important; }
 
-/* Style de base commun (sans bordure grise, juste ombre et blanc) */
+/* Suppression forcée des bordures Leaflet (y compris mode tactile) */
+.leaflet-bar, 
+.leaflet-touch .leaflet-bar, 
+.leaflet-touch .leaflet-control-layers, 
+.leaflet-control-layers {
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Style commun : Fond blanc + Ombre (Zoom, Couches, Légende) */
 .leaflet-bar a, 
 .leaflet-control-layers-toggle, 
 .legend-toggle-btn {
     background-color: #ffffff !important;
     color: var(--blue-marianne) !important;
-    border: none !important; /* PLUS DE BORDURE GRISE */
-    box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important; /* Ombre un peu plus marquée pour détacher du fond */
+    border: none !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important;
     display: flex !important; align-items: center; justify-content: center;
     width: 30px !important; height: 30px !important;
     transition: all 0.2s ease-in-out; cursor: pointer;
     background-image: none !important; 
+    border-radius: 4px !important;
 }
 
-/* SVG Icones */
+/* Icones SVG */
 .leaflet-bar a svg, .leaflet-control-layers-toggle svg, .legend-toggle-btn svg {
     width: 22px !important; height: 22px !important; stroke: currentColor;
 }
 
-/* Hover global */
+/* Hover */
 .leaflet-bar a:hover, .leaflet-control-layers-toggle:hover, .legend-toggle-btn:hover {
     background-color: var(--grey-bg-hover) !important;
     color: var(--blue-marianne-hover) !important;
 }
 
-/* --- SPÉCIFIQUE ZOOM (Fusion en un seul bloc) --- */
+/* --- SPÉCIFIQUE ZOOM (Bloc unique rectangulaire) --- */
 .leaflet-control-zoom {
     display: flex; flex-direction: column;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important; /* L'ombre est sur le conteneur */
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important;
     border-radius: 4px !important;
     background: #fff;
+    border: none !important;
 }
 
-/* Zoom In (Haut) */
 .leaflet-control-zoom-in {
-    border-radius: 4px 4px 0 0 !important; /* Arrondi haut seulement */
-    box-shadow: none !important; /* Pas d'ombre individuelle */
-    border-bottom: 1px solid #f0f0f0 !important; /* Petit trait de séparation interne très léger */
+    border-radius: 4px 4px 0 0 !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid #f0f0f0 !important; /* Trait de séparation interne léger */
     height: 30px !important;
     margin-bottom: 0 !important;
 }
 
-/* Zoom Out (Bas) */
 .leaflet-control-zoom-out {
-    border-radius: 0 0 4px 4px !important; /* Arrondi bas seulement */
+    border-radius: 0 0 4px 4px !important;
     box-shadow: none !important;
     height: 30px !important;
     margin-top: 0 !important;
-}
-
-/* --- BOUTONS ISOLÉS (Couches & Légende) --- */
-/* Eux gardent leur arrondi complet car ils sont seuls */
-.leaflet-control-layers-toggle, 
-.legend-toggle-btn {
-    border-radius: 4px !important;
 }
 
 /* ==========================================================================
@@ -149,16 +136,16 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 .custom-legend-container.legend-expanded {
     padding: 10px !important;
     background: #fff !important;
-    border: none !important; /* Pas de bordure grise */
+    border: none !important;
     border-radius: 4px !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important; /* Ombre de panneau */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
     display: flex; flex-direction: column;
 }
 
 .leaflet-control-layers-expanded .leaflet-control-layers-toggle,
 .legend-expanded .legend-toggle-btn { display: none !important; }
 
-/* Légende */
+/* Légende dynamique */
 .custom-legend-container { background: transparent; border: none; box-shadow: none; }
 .legend-content { display: none; }
 .legend-expanded .legend-content { display: block; }
