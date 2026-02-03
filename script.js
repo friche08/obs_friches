@@ -13,7 +13,24 @@ function getColorForStatus(s) {
     return statusColors[s] || "#777";
 }
 
-// Fonds de carte
+// 1. Fonctions de création des pictogrammes (TES ANIMATIONS REPLACÉES ICI)
+function createSvgPicto(pictocol) {
+    return `<svg width="19.2" height="19.2" version="1.1" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3.6" y="3.6" width="12" height="12" rx="3" fill="${pictocol}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round">
+        <animate attributeName="x" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/>
+        <animate attributeName="y" dur="0.4s" begin="mouseover" from="3.6" to="1.6" fill="freeze"/>
+        <animate attributeName="width" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/>
+        <animate attributeName="height" dur="0.4s" begin="mouseover" from="12" to="16" fill="freeze"/>
+        <animate attributeName="stroke-width" dur="0.4s" begin="mouseover" from="1.6" to="3.2" fill="freeze"/>
+        <animate attributeName="x" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/>
+        <animate attributeName="y" dur="0.4s" begin="mouseout" from="1.6" to="3.6" fill="freeze"/>
+        <animate attributeName="width" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/>
+        <animate attributeName="height" dur="0.4s" begin="mouseout" from="16" to="12" fill="freeze"/>
+        <animate attributeName="stroke-width" dur="0.4s" begin="mouseout" from="3.2" to="1.6" fill="freeze"/>
+      </rect></svg>`;
+}
+
+// configuration des couches
 const osmHot = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
 const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
 const ignCarte = L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image%2Fpng', { attribution: '&copy; IGN' });
@@ -25,82 +42,66 @@ const cadastreLayer = L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUE
 
 let isCadastreChecked = false;
 const map = L.map('map', {
-    minZoom: 8, maxZoom: 18, maxBounds: bounds, maxBoundsViscosity: 1.0, layers: [osmHot]
-}).setView([49.7, 4.7], 9);
+    minZoom: 8, maxZoom: 18, maxBounds: bounds, maxBoundsViscosity: 1.0, layers: [osmHot],
+    zoomControl: false // Désactivé ici pour le replacer manuellement en bas à droite
+});
 
-// Contrôles Leaflet
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+// --- GESTION DES COUCHES ---
 const baseMaps = { "OSM Humanitarian": osmHot, "OSM Standard": osmStandard, "Plan IGN": ignCarte, "Vue aérienne": ignOrtho };
 const overlayMaps = { "Cadastre": cadastreLayer };
+
 const layerControl = L.control.layers(baseMaps, overlayMaps, { collapsed: true, position: 'bottomleft' }).addTo(map);
 
-// Injection Icône Couches (SVG spécifique)
+// Injection Icône Couches SVG
 const layerControlContainer = document.querySelector('.leaflet-control-layers');
 const layerBtn = document.querySelector('.leaflet-control-layers-toggle');
-layerBtn.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M7 10.5 L15 5.5 L23 10.5 L15 15.5 Z"/><path d="M24.34 14.16 L15 20 L5.66 14.16"/><path d="M24.34 18.66 L15 24.5 L5.66 18.66"/></svg>`;
+layerBtn.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M7 10.5 L15 5.5 L23 10.5 L15 15.5 Z" stroke="currentColor"/><path d="M24.34 14.16 L15 20 L5.66 14.16" stroke="currentColor"/><path d="M24.34 18.66 L15 24.5 L5.66 18.66" stroke="currentColor"/></svg>`;
 
-// --- Contrôle de Légende Dynamique (CORRIGÉ) ---
+// --- LÉGENDE DYNAMIQUE ---
 const LegendControl = L.Control.extend({
     options: { position: 'bottomleft' },
     onAdd: function() {
         const container = L.DomUtil.create('div', 'leaflet-control custom-legend-container');
-        
-        // Bouton (visible par défaut)
         const button = L.DomUtil.create('a', 'legend-toggle-btn', container);
-        button.href = '#'; // Nécessaire pour le style "leaflet-bar a"
-        button.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><rect x="7.15" y="8" width="5" height="5"/><circle cx="9.65" cy="19.8" r="2.8"/><path d="M16.15 8 H24.15"/><path d="M16.15 15 H24.15"/><path d="M16.15 22 H24.15"/></svg>`;
+        button.href = '#';
+        button.innerHTML = `<svg viewBox="0 0 30 30" fill="none" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="7" width="5" height="5" stroke="currentColor"/><circle cx="9.5" cy="20" r="2.5" stroke="currentColor"/><path d="M16 8 H24 M16 15 H24 M16 22 H24" stroke="currentColor"/></svg>`;
 
-        // Contenu (caché par défaut)
         const content = L.DomUtil.create('div', 'legend-content', container);
-        
-        // ORDRE IMPOSÉ
-        const order = [
-            "friche avec projet", 
-            "friche sans projet", 
-            "friche reconvertie", 
-            "friche potentielle"
-        ];
-        
-        // Génération HTML sans titre et dans l'ordre
-        order.forEach(status => {
-            if(statusColors[status]) { // Vérification de sécurité
-                const item = L.DomUtil.create('div', 'legend-item', content);
-                item.innerHTML = `
-                    <span class="legend-swatch" style="background:${statusColors[status]}"></span>
-                    <span class="legend-label">${status}</span>
-                `;
-            }
-        });
+        content.id = 'legend-dynamic-content';
 
-        // Ouverture au survol (identique aux couches)
         L.DomEvent.on(container, 'mouseenter', () => {
             L.DomUtil.addClass(container, 'legend-expanded');
-            // Ferme le menu couches s'il est ouvert pour éviter chevauchement
             layerControlContainer.classList.remove('leaflet-control-layers-expanded');
         });
-        
-        L.DomEvent.on(container, 'mouseleave', () => {
-            L.DomUtil.removeClass(container, 'legend-expanded');
-        });
-
-        // Empêcher le clic de traverser (utile si sur mobile)
+        L.DomEvent.on(container, 'mouseleave', () => L.DomUtil.removeClass(container, 'legend-expanded'));
         L.DomEvent.disableClickPropagation(container);
-
         return container;
     }
 });
 map.addControl(new LegendControl());
 
-// Fermer la légende si on survole les couches
-layerControlContainer.addEventListener('mouseenter', () => {
-    const leg = document.querySelector('.custom-legend-container');
-    if(leg) L.DomUtil.removeClass(leg, 'legend-expanded');
-});
-
-// Logique Données et Marqueurs
-function createSvgPicto(pictocol) {
-    return `<svg width="19.2" height="19.2" version="1.1" xmlns="http://www.w3.org/2000/svg"><rect x="3.6" y="3.6" width="12" height="12" rx="3" fill="${pictocol}" stroke="#ffffff" stroke-width="1.6"/></svg>`;
+function updateLegend() {
+    const contentDiv = document.getElementById('legend-dynamic-content');
+    if(!contentDiv) return;
+    contentDiv.innerHTML = '';
+    const order = ["friche avec projet", "friche sans projet", "friche reconvertie", "friche potentielle"];
+    const checkedStatuses = Array.from(document.querySelectorAll('.checkbox-list input:checked')).map(cb => cb.value);
+    
+    order.forEach(status => {
+        if(checkedStatuses.includes(status)) {
+            const item = L.DomUtil.create('div', 'legend-item', contentDiv);
+            item.innerHTML = `<span class="legend-swatch" style="background:${statusColors[status]}"></span><span class="legend-label">${status}</span>`;
+        }
+    });
 }
 
+// --- BOUTON FILTRE (BURGER) ---
+const filterBtn = document.getElementById('toggle-filters');
+filterBtn.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg><span class="btn-text">Filtres</span>`;
+
+// --- DONNÉES ET MARQUEURS ---
 let allData = [], markers = [], markersDict = {}, polygonsDict = {};
 const polygonsLayerGroup = L.layerGroup().addTo(map);
 const ardennesLayerGroup = L.layerGroup().addTo(map);
@@ -109,7 +110,8 @@ Papa.parse('data.csv', {
     download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
     complete: function (results) {
         allData = results.data;
-        document.getElementById('surface-max').value = Math.ceil(Math.max(...allData.map(d => d.unite_fonciere_surface || 0)) / 1000) * 1000;
+        const maxS = Math.max(...allData.map(d => d.unite_fonciere_surface || 0));
+        document.getElementById('surface-max').value = Math.ceil(maxS / 1000) * 1000;
         loadArdennesOutline(); loadGeoJsonData(); addMarkers(allData); initCascadingFilters(); updateFilterOptions();
     }
 });
@@ -119,10 +121,14 @@ function addMarkers(rows) {
         const lat = parseFloat(row.latitude), lon = parseFloat(row.longitude);
         if (isNaN(lat)) return;
         const marker = L.marker([lat, lon], {
-            icon: L.divIcon({ className: "picto", html: createSvgPicto(getColorForStatus(row.site_statut)), iconSize: [19.2, 19.2], iconAnchor: [9.6, 9.6], popupAnchor: [0, -10] })
+            icon: L.divIcon({ className: "picto", html: createSvgPicto(getColorForStatus(row.site_statut)), iconSize: [19.2, 19.2], iconAnchor: [9.6, 9.6], popupAnchor: [0, -10] }),
+            riseOnHover: true
         });
+        
+        // Popup
         marker.bindPopup(`<div class="popup-header-site">${row.site_nom || 'Friche'}</div><span class="popup-commune">${row.comm_nom || ''}</span><hr class="popup-sep"><div class="img-container"><img src="photos/${row.site_id}.webp" class="popup-img" onerror="this.parentElement.style.display='none'"/></div><div class="popup-details"><div><strong>Statut :</strong> ${row.site_statut}</div><div><strong>Surface :</strong> ${row.unite_fonciere_surface ? row.unite_fonciere_surface.toLocaleString('fr-FR') + ' m²' : 'Inconnue'}</div></div>`);
         marker.bindTooltip(row.site_nom || 'Friche', { direction: 'top', offset: [0, -15] });
+        
         markers.push({ marker, data: row });
         if (row.site_id) markersDict[row.site_id] = marker;
     });
@@ -130,9 +136,12 @@ function addMarkers(rows) {
 
 function updateMap(shouldFit = false) {
     const data = getFilteredData();
+    updateLegend();
     const zoom = map.getZoom();
+    
     if (isCadastreChecked && zoom >= CADASTRE_ZOOM_THRESHOLD) { if(!map.hasLayer(cadastreLayer)) cadastreLayer.addTo(map); }
     else { if(map.hasLayer(cadastreLayer)) map.removeLayer(cadastreLayer); }
+    
     polygonsLayerGroup.clearLayers();
     markers.forEach(item => {
         const d = item.data;
@@ -140,6 +149,7 @@ function updateMap(shouldFit = false) {
         if (vis && document.getElementById('filter-epci').value && d.epci_nom !== document.getElementById('filter-epci').value) vis = false;
         if (vis && document.getElementById('filter-commune').value && d.comm_nom !== document.getElementById('filter-commune').value) vis = false;
         if (vis && document.getElementById('filter-friche').value && d.site_nom !== document.getElementById('filter-friche').value) vis = false;
+        
         if (vis) {
             if (!map.hasLayer(item.marker)) item.marker.addTo(map);
             if (zoom >= ZOOM_THRESHOLD && d.site_id && polygonsDict[d.site_id]) polygonsLayerGroup.addLayer(polygonsDict[d.site_id]);
@@ -148,6 +158,7 @@ function updateMap(shouldFit = false) {
     if (shouldFit) fitMap();
 }
 
+// --- FILTRES ---
 function getFilteredData() {
     const sMin = parseFloat(document.getElementById('surface-min').value) || 0;
     const sMax = parseFloat(document.getElementById('surface-max').value) || Infinity;
@@ -188,6 +199,7 @@ function fitMap() {
     if (coords.length > 0) map.fitBounds(L.latLngBounds(coords), { padding: [50, 50], maxZoom: 15 });
 }
 
+// --- GÉOMÉTRIE ---
 function loadArdennesOutline() {
     fetch('ardennes.geojson').then(r => r.json()).then(g => {
         L.geoJSON(g, { style: { color: '#ffffff', weight: 5, opacity: 1, fillOpacity: 0, interactive: false } }).addTo(ardennesLayerGroup);
@@ -205,6 +217,7 @@ function loadGeoJsonData() {
     });
 }
 
+// UI
 const panel = document.getElementById('filters-panel');
 document.getElementById('toggle-filters').addEventListener('click', (e) => { e.stopPropagation(); panel.classList.add('open'); });
 document.getElementById('close-filters').addEventListener('click', () => panel.classList.remove('open'));
