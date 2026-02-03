@@ -13,7 +13,7 @@ function getColorForStatus(s) {
     return statusColors[s] || "#777";
 }
 
-// 1. Fonctions de création des pictogrammes (TES ANIMATIONS REPLACÉES ICI)
+// 1. Fonctions de création des pictogrammes
 function createSvgPicto(pictocol) {
     return `<svg width="19.2" height="19.2" version="1.1" xmlns="http://www.w3.org/2000/svg">
       <rect x="3.6" y="3.6" width="12" height="12" rx="3" fill="${pictocol}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round">
@@ -43,7 +43,7 @@ const cadastreLayer = L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUE
 let isCadastreChecked = false;
 const map = L.map('map', {
     minZoom: 8, maxZoom: 18, maxBounds: bounds, maxBoundsViscosity: 1.0, layers: [osmHot],
-    zoomControl: false // Désactivé ici pour le replacer manuellement en bas à droite
+    zoomControl: false 
 });
 
 L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -112,55 +112,55 @@ Papa.parse('data.csv', {
         allData = results.data;
         const maxS = Math.max(...allData.map(d => d.unite_fonciere_surface || 0));
         document.getElementById('surface-max').value = Math.ceil(maxS / 1000) * 1000;
-        loadArdennesOutline(); loadGeoJsonData(); addMarkers(allData); initCascadingFilters(); updateFilterOptions();
+        loadArdennesOutline(); loadGeoJsonData(); addMarkers(allData);
+        initCascadingFilters(); updateFilterOptions();
     }
 });
 
 function addMarkers(rows) {
+    // Si besoin de nettoyer les anciens marqueurs (mais ici on le fait via updateMap)
     rows.forEach(row => {
         const lat = parseFloat(row.latitude), lon = parseFloat(row.longitude);
         if (isNaN(lat)) return;
+        
+        // 1. Création du marqueur SVG (Code Actuel conservé)
         const marker = L.marker([lat, lon], {
-            icon: L.divIcon({ className: "picto", html: createSvgPicto(getColorForStatus(row.site_statut)), iconSize: [19.2, 19.2], iconAnchor: [9.6, 9.6], popupAnchor: [0, -10] }),
+            icon: L.divIcon({ 
+                className: "picto", 
+                html: createSvgPicto(getColorForStatus(row.site_statut)), 
+                iconSize: [19.2, 19.2], 
+                iconAnchor: [9.6, 9.6], 
+                popupAnchor: [0, -10] 
+            }),
             riseOnHover: true
         });
         
-        // Popup
-        const pollutionClean = (row.sol_pollution_existe || "")
-    .replace(/pollution /gi, "")
-    .trim();
+        // 2. Préparation des données Popup (Restauré de l'ancienne version)
+        const pollutionClean = (row.sol_pollution_existe || "").replace(/pollution /gi, "").trim();
+        const pRaw = row.proprio_nom || "";
+        const pArray = pRaw.split('|').map(p => p.trim() === "_X_" ? "(anonymisé)" : p.trim());
+        const labelProprio = pArray.length > 1 ? "Propriétaires" : "Propriétaire";
+        const imagePath = `photos/${row.site_id}.webp`;
 
-const pRaw = row.proprio_nom || "";
-const pArray = pRaw
-    .split('|')
-    .map(p => p.trim() === "_X_" ? "(anonymisé)" : p.trim());
-const labelProprio = pArray.length > 1 ? "Propriétaires" : "Propriétaire";
+        // 3. Template HTML Riche (Restauré de l'ancienne version)
+        const popupContent = `
+            <div class="popup-header-site">${row.site_nom || 'Friche'}</div>
+            <span class="popup-commune">${row.comm_nom || ''}</span>
+            <hr class="popup-sep">
+            <div class="img-container">
+                <img src="${imagePath}" class="popup-img" onerror="this.parentElement.style.display='none'"/>
+            </div>
+            <div class="popup-details">
+               <div><strong>Statut :</strong> ${row.site_statut}</div>
+               <div><strong>Surface :</strong> ${row.unite_fonciere_surface ? row.unite_fonciere_surface.toLocaleString('fr-FR') + ' m²' : 'Inconnue'}</div>
+               <div><strong>Pollution :</strong> ${pollutionClean || 'Inconnue'}</div>
+               <div><strong>${labelProprio} :</strong> ${pArray.join(', ')}</div>
+            </div>`;
 
-const popupContent = `
-    <div class="popup-header-site">${row.site_nom || 'Friche'}</div>
-    <span class="popup-commune">${row.comm_nom || ''}</span>
-    <hr class="popup-sep">
-    <div class="img-container">
-        <img src="photos/${row.site_id}.webp"
-             class="popup-img"
-             onerror="this.parentElement.style.display='none'"/>
-    </div>
-    <div class="popup-details">
-        <div><strong>Statut :</strong> ${row.site_statut}</div>
-        <div><strong>Surface :</strong> ${
-            row.unite_fonciere_surface
-                ? row.unite_fonciere_surface.toLocaleString('fr-FR') + ' m²'
-                : 'Inconnue'
-        }</div>
-        <div><strong>Pollution :</strong> ${pollutionClean || 'Inconnue'}</div>
-        <div><strong>${labelProprio} :</strong> ${pArray.join(', ')}</div>
-    </div>
-`;
-
-marker.bindPopup(popupContent, {
-    minWidth: 300,
-    maxWidth: 300
-});
+        marker.bindPopup(popupContent, {
+           minWidth: 300,
+           maxWidth: 300
+        });
 
         marker.bindTooltip(row.site_nom || 'Friche', { direction: 'top', offset: [0, -15] });
         
