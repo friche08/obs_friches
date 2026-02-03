@@ -43,24 +43,28 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 
 /* --- BOUTONS DE LA CARTE (Zoom, Couches, Légende) --- */
 .leaflet-bar { border: none !important; }
+
+/* C'est ici que l'on force la suppression du liseré gris par défaut de Leaflet */
+.leaflet-touch .leaflet-bar, 
+.leaflet-touch .leaflet-control-layers,
+.leaflet-bar a, 
+.leaflet-control-layers-toggle, 
+.legend-toggle-btn {
+    border: 1px solid var(--grey-border) !important; /* Notre bordure propre */
+    background-clip: padding-box;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
+}
+
 .leaflet-bar a, 
 .leaflet-control-layers-toggle, 
 .legend-toggle-btn {
     background-color: #ffffff !important;
     color: var(--blue-marianne) !important;
-    border: 1px solid var(--grey-border) !important;
     border-radius: 4px !important;
     display: flex !important; align-items: center; justify-content: center;
     width: 30px !important; height: 30px !important;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
     transition: all 0.2s ease-in-out; cursor: pointer;
-    background-image: none !important; /* Supprime l'icône Leaflet par défaut */
-}
-
-/* Suppression du carré blanc fantôme quand le menu est ouvert */
-.leaflet-control-layers-expanded .leaflet-control-layers-toggle,
-.legend-expanded .legend-toggle-btn {
-    display: none !important;
+    background-image: none !important; 
 }
 
 /* Style des SVGs à l'intérieur */
@@ -79,27 +83,38 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 }
 
 /* --- PANNEAUX EXPANSÉS (Couches & Légende) --- */
+
+/* On cible spécifiquement le conteneur quand il est ouvert pour lui donner le fond blanc */
 .leaflet-control-layers-expanded, 
-.legend-expanded {
+.custom-legend-container.legend-expanded {
     padding: 10px !important;
     background: #fff !important;
     border: 1px solid var(--grey-border) !important;
     border-radius: 4px !important;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
+    display: flex; flex-direction: column; /* Force l'affichage du contenu */
 }
 
-/* Légende Spécifique */
+/* Suppression du bouton toggle (et du carré blanc fantôme) quand le menu est ouvert */
+.leaflet-control-layers-expanded .leaflet-control-layers-toggle,
+.legend-expanded .legend-toggle-btn {
+    display: none !important;
+}
+
+/* Configuration initiale de la légende (fermée) */
 .custom-legend-container { 
-    display: flex; 
-    flex-direction: column-reverse; 
-    align-items: flex-start;
+    background: transparent; 
+    border: none;
+    box-shadow: none;
 }
 .legend-content { display: none; }
-.legend-expanded .legend-content { display: block; }
 
+/* Configuration de la légende (ouverte) */
+.legend-expanded .legend-content { display: block; }
 .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.legend-item:last-child { margin-bottom: 0; } /* Pas de marge pour le dernier */
 .legend-swatch { width: 12px; height: 12px; border-radius: 2px; }
-.legend-label { font-size: 0.85rem; color: #333; }
+.legend-label { font-size: 0.85rem; color: #333; white-space: nowrap; }
 
 /* --- FORMULAIRES ET FILTRES --- */
 #filters-panel {
@@ -119,7 +134,6 @@ body { margin: 0; color: #161616; overflow-x: hidden; }
 .status-fieldset { border: 1px solid #e5e5e5; background: #f6f6f6; padding: 15px; margin-bottom: 20px; }
 .checkbox-list { display: flex; flex-direction: column; gap: 10px; }
 
-/* Style des inputs (Accent color et retrait du contour bleu) */
 input[type="checkbox"], input[type="radio"] { 
     accent-color: var(--blue-marianne); 
     outline: none !important; 
